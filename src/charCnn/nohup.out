@@ -1,0 +1,110 @@
+use cuda
+use cuda
+[  100] loss: 0.077
+[  200] loss: 0.069
+[  300] loss: 0.069
+[  400] loss: 0.067
+[  500] loss: 0.068
+[  600] loss: 0.068
+[  700] loss: 0.068
+[  800] loss: 0.069
+[  900] loss: 0.069
+[ 1000] loss: 0.068
+[ 1100] loss: 0.066
+[ 1200] loss: 0.069
+[ 1300] loss: 0.068
+[ 1400] loss: 0.068
+[ 1500] loss: 0.068
+[ 1600] loss: 0.067
+[ 1700] loss: 0.068
+[ 1800] loss: 0.067
+[ 1900] loss: 0.067
+[ 2000] loss: 0.068
+[ 2100] loss: 0.067
+[ 2200] loss: 0.067
+[ 2300] loss: 0.066
+[ 2400] loss: 0.065
+[ 2500] loss: 0.067
+[ 2600] loss: 0.068
+[ 2700] loss: 0.068
+[ 2800] loss: 0.068
+[ 2900] loss: 0.067
+[ 3000] loss: 0.069
+[ 3100] loss: 0.067
+[ 3200] loss: 0.068
+[ 3300] loss: 0.065
+[ 3400] loss: 0.066
+[ 3500] loss: 0.067
+[ 3600] loss: 0.069
+[ 3700] loss: 0.068
+[ 3800] loss: 0.068
+[ 3900] loss: 0.068
+[ 4000] loss: 0.067
+[ 4100] loss: 0.070
+[ 4200] loss: 0.068
+[ 4300] loss: 0.066
+[ 4400] loss: 0.068
+[ 4500] loss: 0.068
+[ 4600] loss: 0.066
+[ 4700] loss: 0.068
+[ 4800] loss: 0.069
+[ 4900] loss: 0.068
+[ 5000] loss: 0.069
+[ 5100] loss: 0.068
+[ 5200] loss: 0.066
+[ 5300] loss: 0.070
+[ 5400] loss: 0.068
+[ 5500] loss: 0.069
+[ 5600] loss: 0.068
+[ 5700] loss: 0.069
+[ 5800] loss: 0.068
+[ 5900] loss: 0.067
+[ 6000] loss: 0.066
+[ 6100] loss: 0.066
+[ 6200] loss: 0.067
+[ 6300] loss: 0.068
+[ 6400] loss: 0.068
+[ 6500] loss: 0.067
+[ 6600] loss: 0.066
+[ 6700] loss: 0.067
+[ 6800] loss: 0.065
+[ 6900] loss: 0.066
+[ 7000] loss: 0.066
+[ 7100] loss: 0.067
+[ 7200] loss: 0.069
+[ 7300] loss: 0.067
+[ 7400] loss: 0.066
+[ 7500] loss: 0.068
+[ 7600] loss: 0.066
+[ 7700] loss: 0.066
+[ 7800] loss: 0.071
+[ 7900] loss: 0.066
+[ 8000] loss: 0.070
+[ 8100] loss: 0.068
+[ 8200] loss: 0.067
+[ 8300] loss: 0.067
+[ 8400] loss: 0.071
+[ 8500] loss: 0.068
+[ 8600] loss: 0.069
+[ 8700] loss: 0.069
+[ 8800] loss: 0.068
+[ 8900] loss: 0.067
+[ 9000] loss: 0.068
+[ 9100] loss: 0.066
+[ 9200] loss: 0.065
+[ 9300] loss: 0.067
+Traceback (most recent call last):
+  File "main.py", line 154, in <module>
+    main(epochs, is_train)
+  File "main.py", line 79, in main
+    checkpoint_path, epoch)
+  File "main.py", line 109, in pred_and_print
+    rmse = mean_squared_error(pred_list, target_list)
+  File "/home/yoshikawa/.pyenv/versions/3.6.4/lib/python3.6/site-packages/sklearn/metrics/regression.py", line 238, in mean_squared_error
+    y_true, y_pred, multioutput)
+  File "/home/yoshikawa/.pyenv/versions/3.6.4/lib/python3.6/site-packages/sklearn/metrics/regression.py", line 75, in _check_reg_targets
+    check_consistent_length(y_true, y_pred)
+  File "/home/yoshikawa/.pyenv/versions/3.6.4/lib/python3.6/site-packages/sklearn/utils/validation.py", line 204, in check_consistent_length
+    " samples: %r" % [int(l) for l in lengths])
+ValueError: Found input variables with inconsistent numbers of samples: [300684, 2350]
+use cuda
