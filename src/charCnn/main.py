@@ -12,7 +12,6 @@ from predictor import Predictor
 from charcnn import CharCNN
 from dataset import Data
 from optimizer import Optimizer
-from sklearn.metrics import mean_squared_error
 
 
 def main(epochs, is_train=1):
@@ -28,7 +27,7 @@ def main(epochs, is_train=1):
     max_length = 3212
     feature_dim = 1749
     dropout_p = 0.6
-    learning_rate = 0.2
+    learning_rate = 0.1
     filter_num = 256
     output_size = 2
     val_ratio = 0.2
@@ -52,11 +51,11 @@ def main(epochs, is_train=1):
         # val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
 
         # debug
-        train_df = df[512:1024].reset_index(drop=True)
-        val_df = df[:512].reset_index(drop=True)
-
+        train_df = df[200:1000].reset_index(drop=True)
+        val_df = df[:200].reset_index(drop=True)
         del df
         gc.collect()
+        print('data loaded')
         train_loader = dataset(
             train_df, batch_size, max_length, feature_dim, is_train)
         val_loader = dataset(
@@ -70,15 +69,15 @@ def main(epochs, is_train=1):
                           optimizer, use_cuda=use_cuda)
 
         # training
+        print('now training')
         for epoch in range(1, n_epochs + 1):
             loss = trainer.train()
-
+            print(epoch, loss)
             # validation
             if epoch % 1 == 0:
-                pred_and_print(predictor, model, val_loader,
-                               checkpoint_path, epoch)
+                validate(predictor, model, val_loader,
+                         checkpoint_path, epoch)
                 # save_model(model, optimizer, epoch, save_epoch)
-            print(epoch, loss)
         print('finished training')
 
     else:
@@ -102,13 +101,10 @@ def main(epochs, is_train=1):
         submission_df.to_csv('../output/predictions/predict.csv', index=None)
 
 
-def pred_and_print(predictor, model, data_loader, checkpoint, epochs=None):
+def validate(predictor, model, data_loader, checkpoint, epochs=None):
     epochs = '' if epochs is None else ' ' + str(epochs) + ' epochs '
-    pred_list, item_id_list, target_list = predictor.predict()
-    if target_list is not None:
-        rmse = mean_squared_error(pred_list, target_list)
-        print('valid score' + str(epochs) + ': ' + str(rmse))
-    return pred_list, item_id_list
+    rmse = predictor.validate()
+    print('valid score' + str(epochs) + ': ' + str(rmse))
 
 
 def save_model(model, optimizer, epoch, save_epoch):

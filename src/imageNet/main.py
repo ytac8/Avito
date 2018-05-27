@@ -9,9 +9,11 @@ import pandas as pd
 from torch.utils.data import DataLoader
 from trainer import Trainer
 from predictor import Predictor
-from charcnn import CharCNN
 from dataset import Data
 from optimizer import Optimizer
+from torchvision.models import resnet152, resnet18, resnet50
+from torchvision import transforms
+from image_preprocess import RandomCrop, Rescale, ToTensor
 
 
 def main(epochs, is_train=1):
@@ -23,18 +25,18 @@ def main(epochs, is_train=1):
     checkpoint_path = None
 
     # learning parameters
-    batch_size = 32
+    batch_size = 256
     max_length = 3212
     feature_dim = 1749
-    dropout_p = 0.6
-    learning_rate = 0.1
-    filter_num = 256
-    output_size = 2
+    dropout_p = 0.5
+    learning_rate = 0.01
+    output_size = 1
     val_ratio = 0.2
+    # filter_num = 256
 
-    model = CharCNN(feature_dim=feature_dim, dropout_p=dropout_p,
-                    output_size=output_size, filter_num=filter_num)
-
+    model = resnet152(pretrained=True)
+    num_features = model.fc.in_features
+    model.fc = nn.Linear(num_features, output_size)
     model = nn.DataParallel(model)
     with open('../../data/pickle/item_id_dict.pkl', mode='rb') as f:
         item_id_dict = pickle.load(f)
@@ -51,37 +53,29 @@ def main(epochs, is_train=1):
         # val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
 
         # debug
-        train_df = df[200:1000].reset_index(drop=True)
-        val_df = df[:200].reset_index(drop=True)
+        train_df = df[600:3000].reset_index(drop=True)
+        val_df = df[:600].reset_index(drop=True)
         del df
         gc.collect()
-        print('data loaded')
-        train_loader = dataset(
-            train_df, batch_size, max_length, feature_dim, is_train)
-        val_loader = dataset(
-            val_df, batch_size, max_length, feature_dim, is_train)
+        print('data loaded!')
+
+        train_loader = dataset(train_df, batch_size, is_train)
+        val_loader = dataset(val_df, batch_size, is_train)
 
         optimizer = Optimizer(model, lr=learning_rate)
-        criterion = nn.MSELoss()
-        predictor = Predictor(val_loader, model, use_cuda, item_id_dict)
+        criterion = nn.BCELoss()
+        predictor = Predictor(val_loader, model, use_cuda,
+                              item_id_dict, is_train)
 
         trainer = Trainer(train_loader, model, criterion,
-                          optimizer, use_cuda=use_cuda)
-
+                          optimizer, use_cuda, n_epochs, save_epoch)
         # training
         print('now training')
-        for epoch in range(1, n_epochs + 1):
-            loss = trainer.train()
-            print(epoch, loss)
-            # validation
-            if epoch % 1 == 0:
-                validate(predictor, model, val_loader,
-                         checkpoint_path, epoch)
-                # save_model(model, optimizer, epoch, save_epoch)
-        print('finished training')
+        trainer.train()
+        print('finished training!!!')
 
     else:
-        print('test_prediction')
+        print('test prediction')
         test_df = pd.read_csv('../../data/unzipped/test.csv')
         with open('../../data/pickle/item_id_dict.pkl', mode='rb') as f:
             item_id_dict = pickle.load(f)
@@ -101,26 +95,9 @@ def main(epochs, is_train=1):
         submission_df.to_csv('../output/predictions/predict.csv', index=None)
 
 
-def validate(predictor, model, data_loader, checkpoint, epochs=None):
-    epochs = '' if epochs is None else ' ' + str(epochs) + ' epochs '
-    rmse = predictor.validate()
-    print('valid score' + str(epochs) + ': ' + str(rmse))
-
-
-def save_model(model, optimizer, epoch, save_epoch):
-    if epoch % save_epoch == 0:
-        model_filename = '../output/save_point/' + \
-            'model_' + str(epoch) + 'epochs.pth.tar'
-
-        state = {
-            'state_dict': model.state_dict(),
-            'optimizer': optimizer.model_optimizer.state_dict(),
-        }
-        torch.save(state, model_filename)
-
-
-def dataset(data, batch_size, max_length, feature_dim, is_train):
-    dataset = Data(data, max_length, feature_dim, is_train)
+def dataset(data, batch_size, is_train):
+    dataset = Data(data, is_train, transforms=transforms.Compose(
+        [Rescale(256), RandomCrop(224), ToTensor()]))
     data_loader = DataLoader(
         dataset, batch_size=batch_size, shuffle=False, num_workers=8)
 

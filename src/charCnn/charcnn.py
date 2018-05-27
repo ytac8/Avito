@@ -4,11 +4,11 @@ import torch
 
 class CharCNN(nn.Module):
 
-    def __init__(self, feature_dim, dropout_p, output_size=2, filter_num=256):
+    def __init__(self, feature_dim, dropout_p, output_size=1, filter_num=256):
         super(CharCNN, self).__init__()
 
-        self.output_size = output_size
         self.filter_num = filter_num
+        self.emb = nn.Embedding(feature_dim, 10)
 
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, filter_num, kernel_size=(7, feature_dim), stride=1),
@@ -42,7 +42,9 @@ class CharCNN(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, input):
-        output = self.conv1(input)
+        output = self.emb(input)
+        output = output.unsqueeze(1)
+        output = self.conv1(output)
         output = torch.transpose(output, 1, 3)
         output = self.conv2(output)
         output = torch.transpose(output, 1, 3)
