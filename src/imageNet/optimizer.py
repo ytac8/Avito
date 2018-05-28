@@ -5,10 +5,10 @@ from torch.optim import lr_scheduler
 
 class Optimizer():
 
-    def __init__(self, model, lr=0.1):
+    def __init__(self, model, parameters, lr=0.1):
         self.model = model
         self.model_optimizer = optim.SGD(
-            model.parameters(), lr=lr, momentum=0.9)
+            parameters, lr=lr, momentum=0.9)
         self.model_scheduler = lr_scheduler.StepLR(
             self.model_optimizer, step_size=5, gamma=0.99)
 

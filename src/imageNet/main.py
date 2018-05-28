@@ -11,7 +11,7 @@ from trainer import Trainer
 from predictor import Predictor
 from dataset import Data
 from optimizer import Optimizer
-from torchvision.models import resnet152, resnet18, resnet50
+from torchvision.models import resnet152, resnet18, resnet50, vgg16_bn
 from torchvision import transforms
 from image_preprocess import RandomCrop, Rescale, ToTensor
 
@@ -20,24 +20,22 @@ def main(epochs, is_train=1):
     # initialize
     is_train = True if is_train == 1 else False
     n_epochs = epochs
-    save_epoch = 1
     use_cuda = torch.cuda.is_available()
     checkpoint_path = None
 
     # learning parameters
+    save_epoch = 1
     batch_size = 256
-    max_length = 3212
-    feature_dim = 1749
-    dropout_p = 0.5
     learning_rate = 0.01
     output_size = 1
     val_ratio = 0.2
-    # filter_num = 256
 
     model = resnet152(pretrained=True)
+    # model = vgg16_bn(pretrained=True)
+    for param in model.parameters():
+        param.requires_grad = False
     num_features = model.fc.in_features
     model.fc = nn.Linear(num_features, output_size)
-    model = nn.DataParallel(model)
     with open('../../data/pickle/item_id_dict.pkl', mode='rb') as f:
         item_id_dict = pickle.load(f)
 
@@ -49,12 +47,13 @@ def main(epochs, is_train=1):
     if is_train:
         df = pd.read_csv('../../data/unzipped/train.csv')
         df = df.sample(frac=1, random_state=114514).reset_index(drop=True)
-        # train_df = df[int(len(df) * val_ratio):].reset_index(drop=True)
-        # val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
+        train_df = df[int(len(df) * val_ratio):].reset_index(drop=True)
+        val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
 
         # debug
-        train_df = df[600:3000].reset_index(drop=True)
-        val_df = df[:600].reset_index(drop=True)
+        # train_df = df[600:3000].reset_index(drop=True)
+        # val_df = df[:600].reset_index(drop=True)
+
         del df
         gc.collect()
         print('data loaded!')
@@ -62,12 +61,10 @@ def main(epochs, is_train=1):
         train_loader = dataset(train_df, batch_size, is_train)
         val_loader = dataset(val_df, batch_size, is_train)
 
-        optimizer = Optimizer(model, lr=learning_rate)
+        optimizer = Optimizer(model, model.fc.parameters(), lr=learning_rate)
         criterion = nn.BCELoss()
-        predictor = Predictor(val_loader, model, use_cuda,
-                              item_id_dict, is_train)
-
-        trainer = Trainer(train_loader, model, criterion,
+        model = nn.DataParallel(model)
+        trainer = Trainer(train_loader, val_loader,  model, criterion,
                           optimizer, use_cuda, n_epochs, save_epoch)
         # training
         print('now training')
@@ -81,7 +78,7 @@ def main(epochs, is_train=1):
             item_id_dict = pickle.load(f)
 
         test_loader = dataset(
-            test_df,  batch_size, max_length, feature_dim, is_train)
+            test_df,  batch_size, is_train)
         predictor = Predictor(test_loader, model,
                               use_cuda, item_id_dict, is_train)
 
@@ -99,7 +96,7 @@ def dataset(data, batch_size, is_train):
     dataset = Data(data, is_train, transforms=transforms.Compose(
         [Rescale(256), RandomCrop(224), ToTensor()]))
     data_loader = DataLoader(
-        dataset, batch_size=batch_size, shuffle=False, num_workers=8)
+        dataset, batch_size=batch_size, shuffle=False, num_workers=16)
 
     return data_loader
 
@@ -118,14 +115,14 @@ if __name__ == '__main__':
     file_name = now + '.csv'
     is_train = args.train
 
-    try:
-        os.makedirs('../log/' + output_dir_name)
-    except FileExistsError as e:
-        pass
+    # try:
+    #     os.makedirs('../log/' + output_dir_name)
+    # except FileExistsError as e:
+    #     pass
 
     output_path = '../' + output_dir_name + file_name
     main(epochs, is_train)
     sum_aucs = 0
 
-    with open(output_path, 'w') as f:
-        f.write(str(sum_aucs))
+    # with open(output_path, 'w') as f:
+    #     f.write(str(sum_aucs))

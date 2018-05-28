@@ -1,4 +1,6 @@
 import torch
+import os
+# import cv2
 from torch.utils.data import Dataset
 from skimage import io
 
@@ -20,7 +22,15 @@ class Data(Dataset):
         image_name = self.data.image.iloc[idx]
         if (type(image_name) == str):
             image_name = str(self.data.image.iloc[idx]) + '.jpg'
-            img = io.imread(self.img_dir + image_name)
+            image_path = self.img_dir + image_name
+            if os.path.exists(image_path):
+                try:
+                    img = io.imread(image_path)
+                except:
+                    img = torch.zeros(224, 224, 3).float()
+            else:
+                img = torch.zeros(224, 224, 3).float()
+
             if self.transforms:
                 img = self.transforms(img).float()
         else:
