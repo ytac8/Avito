@@ -23,28 +23,17 @@ class Predictor():
             target_list = []
 
             for batch_i, batch in enumerate(self.data_loader):
-                input_variable = batch['feature'].to(self.device)
+                input_variable = batch['image'].to(self.device)
                 item_ids = self.item_id_decode(
                     batch['item_id'].view(-1).tolist())
                 predict = self.model(input_variable)
-                target = batch['label'].view(-1).tolist()
+                target = batch['target'].view(-1).tolist()
                 target_list.extend(target)
 
                 item_id_list.extend(item_ids)
                 pred_list.extend(predict.view(-1).tolist())
 
             return pred_list, item_id_list, target_list
-
-    def validate(self):
-        with torch.no_grad():
-            mse = 0.0
-            for batch_i, batch in enumerate(self.data_loader):
-                input_variable = batch['feature'].to(self.device)
-                predict = self.model(input_variable).view(-1)
-                target = batch['label'].view(-1).to(self.device)
-                mse += torch.sum((predict - target) ** 2).to("cpu").numpy()
-
-            return np.sqrt(mse / batch['feature'].size(0))
 
     def item_id_decode(self, item_id_list):
         item_id_list = [self.item_id_dict[x] for x in item_id_list]

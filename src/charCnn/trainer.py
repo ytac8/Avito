@@ -4,7 +4,7 @@ class Trainer():
                  use_cuda, clip=5):
 
         self.data_loader = data_loader
-        self.model = model
+        self.model = model.train()
         self.criterion = criterion
         self.optimizer = optimizer
         self.clip = clip
@@ -18,9 +18,11 @@ class Trainer():
         for i, batch in enumerate(self.data_loader):
             self.optimizer.zero_grad()
             input_variable = batch['feature'].to(self.device)
-            target = batch['label'].to(self.device).view(-1)
+            print('========================')
+            print(input_variable.shape)
+            input_variable.requires_grad_()
+            target = batch['label'].to(self.device).view(-1).float()
             predict = self.model(input_variable).view(-1)
-
             loss = self.criterion(predict, target)
             loss.backward()
             self.optimizer.gradient_clip(self.clip)
