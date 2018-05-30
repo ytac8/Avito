@@ -36,7 +36,7 @@ class Data(Dataset):
         else:
             img = torch.zeros(3, 224, 224).float()
 
-        target = 1 if self.data.deal_probability[idx] > 0.5 else 0
+        target = self.data.deal_probability[idx]
         target = torch.FloatTensor([target])
 
         return {"image": img, "target": target}

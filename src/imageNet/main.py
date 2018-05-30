@@ -26,16 +26,28 @@ def main(epochs, is_train=1):
     # learning parameters
     save_epoch = 1
     batch_size = 256
-    learning_rate = 0.01
+    learning_rate = 0.1
     output_size = 1
     val_ratio = 0.2
 
-    model = resnet152(pretrained=True)
-    # model = vgg16_bn(pretrained=True)
-    for param in model.parameters():
-        param.requires_grad = False
-    num_features = model.fc.in_features
-    model.fc = nn.Linear(num_features, output_size)
+    # model = resnet152(pretrained=True)
+    model = vgg16_bn(pretrained=True)
+    # for param in model.parameters():
+    #     param.requires_grad = False
+    # num_features = model.fc.in_features
+    # model.fc = nn.Linear(num_features, output_size)
+    model.classifier = nn.Sequential(
+        nn.Linear(512 * 7 * 7, 4096),
+        nn.ReLU(True),
+        nn.Dropout(),
+        nn.Linear(4096, 4096),
+        nn.ReLU(True),
+        nn.Dropout(),
+        nn.Linear(4096, 512),
+        nn.Linear(512, 128),
+        nn.Linear(128, 1),
+        nn.Sigmoid()
+    )
     with open('../../data/pickle/item_id_dict.pkl', mode='rb') as f:
         item_id_dict = pickle.load(f)
 
@@ -51,8 +63,8 @@ def main(epochs, is_train=1):
         val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
 
         # debug
-        # train_df = df[600:3000].reset_index(drop=True)
-        # val_df = df[:600].reset_index(drop=True)
+        # train_df = df[3000:10000].reset_index(drop=True)
+        # val_df = df[:3000].reset_index(drop=True)
 
         del df
         gc.collect()
@@ -61,8 +73,9 @@ def main(epochs, is_train=1):
         train_loader = dataset(train_df, batch_size, is_train)
         val_loader = dataset(val_df, batch_size, is_train)
 
-        optimizer = Optimizer(model, model.fc.parameters(), lr=learning_rate)
-        criterion = nn.BCELoss()
+        optimizer = Optimizer(
+            model, model.parameters(), lr=learning_rate)
+        criterion = nn.MSELoss().to(device)
         model = nn.DataParallel(model)
         trainer = Trainer(train_loader, val_loader,  model, criterion,
                           optimizer, use_cuda, n_epochs, save_epoch)
@@ -93,8 +106,11 @@ def main(epochs, is_train=1):
 
 
 def dataset(data, batch_size, is_train):
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+
     dataset = Data(data, is_train, transforms=transforms.Compose(
-        [Rescale(256), RandomCrop(224), ToTensor()]))
+        [Rescale(256), RandomCrop(224), ToTensor(), normalize]))
     data_loader = DataLoader(
         dataset, batch_size=batch_size, shuffle=False, num_workers=16)
 
