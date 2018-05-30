@@ -8,7 +8,6 @@ class Trainer():
 
     def __init__(self, train_loader, val_loader, model, criterion, optimizer,
                  use_cuda, num_epoch, save_epoch=15, clip=5, valid_interval=1000):
-
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.model = model.train()
@@ -28,8 +27,7 @@ class Trainer():
     def train(self):
 
         for epoch in range(0, self.num_epochs):
-            if epoch % 10 == 9:
-                self.optimizer.scheduler_step()
+            self.optimizer.scheduler_step()
 
             running_loss = 0.0
 
@@ -40,8 +38,7 @@ class Trainer():
                 input_variable.requires_grad_()
                 target = batch['target'].to(self.device).view(-1)
 
-                predict = self.model(input_variable)
-                predict = F.sigmoid(predict).view(-1)
+                predict = self.model(input_variable).view(-1)
 
                 loss = self.criterion(predict, target)
                 loss.backward()
@@ -63,6 +60,7 @@ class Trainer():
 
             print('============================')
             print(str(epoch) + 'epoch:', loss.item())
+
             if epoch % self.save_epoch == self.save_epoch - 1:
                 val_score = self.validate()
                 print(str(epoch) + 'validation score:' + str(val_score))
@@ -71,14 +69,14 @@ class Trainer():
         return loss.item()
 
     def validate(self):
+        mse = 0.0
         with torch.no_grad():
-            mse = 0.0
             for batch_i, batch in enumerate(self.val_loader):
                 input_variable = batch['image'].to(self.device)
-                predict = self.model(input_variable)
-                predict = F.sigmoid(predict).view(-1)
                 target = batch['target'].view(-1).to(self.device)
-                mse += torch.sum((predict - target) ** 2).to("cpu").numpy()
+                predict = self.model(input_variable).view(-1)
+                mse += torch.sum((predict - target) **
+                                 2).to("cpu").detach().numpy()
             return np.sqrt(mse / len(self.val_loader))
 
     def save_model(self, epoch, best_iter, val_score):
