@@ -1,9 +1,7 @@
-import os
 import gc
 import torch
 import torch.nn as nn
 import argparse
-import datetime
 import pickle
 import pandas as pd
 from torch.utils.data import DataLoader
@@ -43,12 +41,12 @@ def main(epochs, is_train=1):
     if is_train:
         df = pd.read_csv('../../data/unzipped/train.csv')
         df = df.sample(frac=1, random_state=114514).reset_index(drop=True)
-        train_df = df[int(len(df) * val_ratio):].reset_index(drop=True)
-        val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
+        # train_df = df[int(len(df) * val_ratio):].reset_index(drop=True)
+        # val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
 
         # debug
-        # train_df = df[3000:10000].reset_index(drop=True)
-        # val_df = df[:3000].reset_index(drop=True)
+        train_df = df[3000:10000].reset_index(drop=True)
+        val_df = df[:3000].reset_index(drop=True)
 
         del df
         gc.collect()
@@ -92,37 +90,21 @@ def main(epochs, is_train=1):
 def dataset(data, batch_size, is_train):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-
     dataset = Data(data, is_train, transforms=transforms.Compose(
         [Rescale(256), RandomCrop(224), ToTensor(), normalize]))
     data_loader = DataLoader(
         dataset, batch_size=batch_size, shuffle=False, num_workers=16)
-
     return data_loader
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Setting model and dataset')
-    parser.add_argument('-ep', '--epochs', default=10, metavar='epochs', type=int,
-                        help='epochs')
-    parser.add_argument('-t', '--train', default=1, metavar='train_mode', type=int,
-                        help='train_mode')
+    parser.add_argument('-ep', '--epochs', default=10, metavar='epochs',
+                        type=int, help='epochs')
+    parser.add_argument('-t', '--train', default=1, metavar='train_mode',
+                        type=int, help='train_mode')
 
     args = parser.parse_args()
-    now = datetime.datetime.now().strftime('%s')
-    output_dir_name = 'log/'
     epochs = args.epochs
-    file_name = now + '.csv'
     is_train = args.train
-
-    # try:
-    #     os.makedirs('../log/' + output_dir_name)
-    # except FileExistsError as e:
-    #     pass
-
-    output_path = '../' + output_dir_name + file_name
     main(epochs, is_train)
-    sum_aucs = 0
-
-    # with open(output_path, 'w') as f:
-    #     f.write(str(sum_aucs))
