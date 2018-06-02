@@ -12,6 +12,7 @@ from predictor import Predictor
 from dataset import Data
 from optimizer import Optimizer
 from torchvision.models import resnet152, resnet18, resnet50, vgg16_bn
+from feature_extractor import VGG16FeatureExtractor
 from torchvision import transforms
 from image_preprocess import RandomCrop, Rescale, ToTensor
 
@@ -30,24 +31,7 @@ def main(epochs, is_train=1):
     output_size = 1
     val_ratio = 0.2
 
-    # model = resnet152(pretrained=True)
-    model = vgg16_bn(pretrained=True)
-    # for param in model.parameters():
-    #     param.requires_grad = False
-    # num_features = model.fc.in_features
-    # model.fc = nn.Linear(num_features, output_size)
-    model.classifier = nn.Sequential(
-        nn.Linear(512 * 7 * 7, 4096),
-        nn.ReLU(True),
-        nn.Dropout(),
-        nn.Linear(4096, 4096),
-        nn.ReLU(True),
-        nn.Dropout(),
-        nn.Linear(4096, 512),
-        nn.Linear(512, 128),
-        nn.Linear(128, 1),
-        nn.Sigmoid()
-    )
+    model = VGG16FeatureExtractor()
     with open('../../data/pickle/item_id_dict.pkl', mode='rb') as f:
         item_id_dict = pickle.load(f)
 
