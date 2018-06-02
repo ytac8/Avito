@@ -13,7 +13,7 @@ from image_preprocess import Rescale, RandomCrop, ToTensor
 def main():
     # initialize
     use_cuda = torch.cuda.is_available()
-    batch_size = 256
+    batch_size = 32
 
     model = VGG16FeatureExtractor()
 
@@ -24,7 +24,7 @@ def main():
     device = "cuda" if use_cuda else "cpu"
     model.to(device)
 
-    model = nn.DataParallel(model)
+    # model = nn.DataParallel(model)
 
     # for t in ['train', 'test']:
     for t in ['test']:

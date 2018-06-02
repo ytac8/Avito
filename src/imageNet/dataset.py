@@ -32,7 +32,9 @@ class Data(Dataset):
                     img = io.imread(image_path)
                 except:
                     img = torch.zeros(224, 224, 3).float()
+                    print('c')
             else:
+                print('a')
                 img = torch.zeros(224, 224, 3).float()
 
             if self.transforms:
