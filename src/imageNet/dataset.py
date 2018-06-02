@@ -40,9 +40,12 @@ class Data(Dataset):
         else:
             img = torch.zeros(3, 224, 224).float()
 
-        target = self.data.deal_probability.iloc[idx]
-        target = torch.FloatTensor([target])
         item_id = self.data.item_id.iloc[idx]
         item_id = self.item_id_dict[item_id]
 
-        return {"item_id": item_id, "image": img, "target": target}
+        if self.is_train:
+            target = self.data.deal_probability.iloc[idx]
+            target = torch.FloatTensor([target])
+            return {"item_id": item_id, "image": img, "target": target}
+
+        return {"item_id": item_id, "image": img}

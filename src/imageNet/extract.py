@@ -37,7 +37,8 @@ def main():
 
     model = nn.DataParallel(model)
 
-    for t in ['train', 'test']:
+    # for t in ['train', 'test']:
+    for t in ['test']:
         if t == 'train':
             data_loader = train_data_loader
         else:
