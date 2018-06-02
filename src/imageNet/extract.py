@@ -13,7 +13,7 @@ from image_preprocess import Rescale, RandomCrop, ToTensor
 def main():
     # initialize
     use_cuda = torch.cuda.is_available()
-    batch_size = 128
+    batch_size = 256
 
     model = VGG16FeatureExtractor()
 
@@ -24,25 +24,20 @@ def main():
     device = "cuda" if use_cuda else "cpu"
     model.to(device)
 
-    train_df = pd.read_csv('../../data/unzipped/train.csv')
-    test_df = pd.read_csv('../../data/unzipped/test.csv')
-
-    train_df = train_df.sample(
-        frac=1, random_state=114514).reset_index(drop=True)
-    test_df = test_df.sample(
-        frac=1, random_state=114514).reset_index(drop=True)
-
-    train_data_loader = set_data_loader(train_df, batch_size, True)
-    test_data_loader = set_data_loader(test_df, batch_size, False)
-
     model = nn.DataParallel(model)
 
     # for t in ['train', 'test']:
     for t in ['test']:
         if t == 'train':
-            data_loader = train_data_loader
+            train_df = pd.read_csv('../../data/unzipped/train.csv')
+            train_df = train_df.sample(
+                frac=1, random_state=114514).reset_index(drop=True)
+            data_loader = set_data_loader(train_df, batch_size, True)
         else:
-            data_loader = test_data_loader
+            test_df = pd.read_csv('../../data/unzipped/test.csv')
+            test_df = test_df.sample(
+                frac=1, random_state=114514).reset_index(drop=True)
+            data_loader = set_data_loader(test_df, batch_size, False)
 
         feature_list = []
         item_id_list = []
@@ -59,7 +54,7 @@ def main():
         feature_df = pd.DataFrame(feature_list)
 
         feature_df['item_id'] = item_id_series
-        feature_df.to_hdf(t + "image_feature.h5", 'table',
+        feature_df.to_hdf(t + "_image_feature.h5", 'table',
                           complib='blosc', complevel=9)
 
 
