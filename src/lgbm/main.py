@@ -8,18 +8,20 @@ from sklearn.model_selection import train_test_split
 
 def main():
 
-    # train_image_feature = pd.read_hdf(
-    #     '../../data/features/train_image_feature.h5', 'table')
-    # test_image_feature = pd.read_hdf(
-    #     '../../data/features/test_image_feature.h5', 'table')
-    preprocessor = Preprocessor()
+    train_image_feature = pd.read_hdf(
+        '../../data/features/train_image_feature.h5', 'table')
+    test_image_feature = pd.read_hdf(
+        '../../data/features/test_image_feature.h5', 'table')
+    preprocessor = Preprocessor('../../data/features/default_feature.pkl')
+    preprocessor.add_feture(train_image_feature, test_image_feature, 'image')
     train_feature, test_feature, train_target, feature_names, categorical = preprocessor.get_feature_vec()
 
     # parameters
     rounds = 50000
     early_stop_rounds = 500
-    num_leaves = 31
-    learning_rate = 0.02
+    num_leaves = 255
+    learning_rate = 0.025
+
     params = {
         'objective': 'regression',
         'metric': 'rmse',
@@ -28,7 +30,8 @@ def main():
         'learning_rate': learning_rate,
         'feature_fraction': 0.5,
         'bagging_fraction': 0.7,
-        'verbosity': -1
+        'max_bin': 512,
+        'verbosity': -1,
     }
 
     print('Number of features:', len(feature_names))
@@ -52,7 +55,7 @@ def main():
                       early_stopping_rounds=early_stop_rounds,
                       verbose_eval=300)
 
-    sub = pd.read_csv('../input/sample_submission.csv')
+    sub = pd.read_csv('../../data/unzipped/sample_submission.csv')
     valid_score = evals_result['valid']['rmse'][model.best_iteration - 1]
     sub['deal_probability'] = np.clip(model.predict(
         test_feature, num_iteration=model.best_iteration), 0, 1)

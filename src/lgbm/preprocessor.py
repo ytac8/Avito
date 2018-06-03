@@ -62,16 +62,51 @@ class Preprocessor():
                 self.feature['y_train'], self.feature['feature_names'],
                 self.feature['categorical_feature_name'])
 
-    # def add_feture(self, add_train, add_test, feature_name_prefix):
+    def add_feture(self, added_train_df, added_test_df, feature_name_prefix=''):
 
-    #     sorted_train_df = pd.concat(
-    #         [self.feature['train_item_id'], add_train], on='item_id', how='inner')
+        # 一旦idだけ分離して、それ以外のカラム名を変更
+        train_id = pd.DataFrame(added_train_df.item_id)
+        test_id = pd.DataFrame(added_test_df.item_id)
+        added_train_df.drop('item_id', axis=1, inplace=True)
+        added_test_df.drop('item_id', axis=1, inplace=True)
 
-    #     sorted_test_df = pd.concat(
-    #         [self.feature['test_item_id'], add_test], on='item_id', how='inner')
+        self._change_column_name(added_train_df, 'image')
+        self._change_column_name(added_test_df, 'image')
+        added_column_name = added_train_df.columns
 
-    #     added_train = pd.concat([self.feature['x_train'], ])
-    #     return
+        # idをくっつけ直す
+        added_train_df = pd.concat(
+            [train_id, added_train_df], axis=1)
+        added_test_df = pd.concat([test_id, added_test_df], axis=1)
+
+        # 追加するデータがすでにあるデータとおなじ順序になるようにする
+        added_train_df = pd.merge(
+            pd.DataFrame(self.feature['train_item_id']), added_train_df,
+            on='item_id', how='left')
+        added_test_df = pd.merge(
+            pd.DataFrame(self.feature['test_item_id']), added_test_df,
+            on='item_id', how='left')
+
+        # キーとして使ってたitem_idをドロップ
+        added_train_df.drop('item_id', axis=1, inplace=True)
+        added_test_df.drop('item_id', axis=1, inplace=True)
+
+        # 今までのやつとくっつける
+        self.feature['x_train'] = scipy.sparse.hstack([
+            self.feature['x_train'],
+            added_train_df
+        ])
+
+        self.feature['x_test'] = scipy.sparse.hstack([
+            self.feature['x_test'],
+            added_test_df
+        ])
+
+        self.feature['feature_names'] = np.hstack([
+            self.feature['feature_names'],
+            added_column_name
+        ])
+        return
 
     def _create_feature(self, path=None):
         self._description_preprocess()
@@ -99,7 +134,9 @@ class Preprocessor():
             'y_train': y_train,
             'categorical_feature_name': self.categorical_feature_names,
             'feature_names': self._get_feature_names(),
-            'train_item_id': self.train_df.item_id, 'test_item_id': self.test_df.item_id}
+            'train_item_id': self.train_df.item_id,
+            'test_item_id': self.test_df.item_id
+        }
 
     def save_feature(self, path):
         joblib.dump(self.feature, path, compress=3)
@@ -138,10 +175,9 @@ class Preprocessor():
                     col] = df[col].apply(lambda comment: len(comment.split()))
                 df['num_unique_words_' +
                     col] = df[col].apply(lambda comment: len(set(w for w in comment.split())))
-
-            df['words_vs_unique_title'] = df['num_unique_words_title'] /
+            df['words_vs_unique_title'] = df['num_unique_words_title'] / \
                 df['num_words_title'] * 100
-            df['words_vs_unique_description'] = df['num_unique_words_description'] /
+            df['words_vs_unique_description'] = df['num_unique_words_description'] / \
                 df['num_words_description'] * 100
             df['city'] = df['region'] + '_' + df['city']
             df['num_desc_punct'] = df['description'].apply(
@@ -167,3 +203,6 @@ class Preprocessor():
             'train_desc': train_desc_counts,
             'test_desc': test_desc_counts
         }
+
+    def _change_column_name(self, df, prefix):
+        df.rename(columns=lambda x: prefix + '_' + str(x), inplace=True)
