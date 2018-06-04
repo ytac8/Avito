@@ -4,6 +4,7 @@ import torch.nn as nn
 import argparse
 import pickle
 import pandas as pd
+import joblib
 from torch.utils.data import DataLoader
 from trainer import Trainer
 from predictor import Predictor
@@ -29,9 +30,26 @@ def main(epochs, is_train=1):
     output_size = 1
     val_ratio = 0.2
 
-    model = VGG16FeatureExtractor()
-    with open('../../data/pickle/item_id_dict.pkl', mode='rb') as f:
-        item_id_dict = pickle.load(f)
+    # model = VGG16FeatureExtractor()
+    model = vgg16_bn(pretrained=True)
+
+    # for param in model.parameters():
+    #    param.requires_grad = False
+    # num_features = model.fc.in_features
+    # model.fc = nn.Linear(num_features, output_size)
+    model.classifier = nn.Sequential(
+        nn.Linear(512 * 7 * 7, 4096),
+        nn.ReLU(True),
+        nn.Dropout(),
+        nn.Linear(4096, 4096),
+        nn.ReLU(True),
+        nn.Dropout(),
+        nn.Linear(4096, 512),
+        nn.Linear(512, 128),
+        nn.Linear(128, 1),
+        nn.Sigmoid()
+    )
+    item_id_dict = joblib.load('../../data/pickle/label_dict.pkl')
 
     if torch.cuda.is_available():
         print('use cuda')
@@ -41,12 +59,12 @@ def main(epochs, is_train=1):
     if is_train:
         df = pd.read_csv('../../data/unzipped/train.csv')
         df = df.sample(frac=1, random_state=114514).reset_index(drop=True)
-        # train_df = df[int(len(df) * val_ratio):].reset_index(drop=True)
-        # val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
+        train_df = df[int(len(df) * val_ratio):].reset_index(drop=True)
+        val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
 
         # debug
-        train_df = df[3000:10000].reset_index(drop=True)
-        val_df = df[:3000].reset_index(drop=True)
+        # train_df = df[3000:10000].reset_index(drop=True)
+        # val_df = df[:3000].reset_index(drop=True)
 
         del df
         gc.collect()
@@ -69,8 +87,6 @@ def main(epochs, is_train=1):
     else:
         print('test prediction')
         test_df = pd.read_csv('../../data/unzipped/test.csv')
-        with open('../../data/pickle/item_id_dict.pkl', mode='rb') as f:
-            item_id_dict = pickle.load(f)
 
         test_loader = dataset(
             test_df,  batch_size, is_train)

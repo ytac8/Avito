@@ -47,7 +47,7 @@ class Trainer():
 
                 running_loss += loss.item()
                 if i % self.valid_interval == self.valid_interval - 1:
-                    # val_score = self.validate()
+                    val_score = self.validate()
                     val_score = running_loss / self.valid_interval
                     print('[%d], [%5d] loss: %.3f validataion score: %.5f' %
                           (epoch, i + 1, running_loss / self.valid_interval, val_score))
@@ -70,6 +70,7 @@ class Trainer():
 
     def validate(self):
         mse = 0.0
+        self.model.eval()
         with torch.no_grad():
             for batch_i, batch in enumerate(self.val_loader):
                 input_variable = batch['image'].to(self.device)

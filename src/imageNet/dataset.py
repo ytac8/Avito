@@ -1,6 +1,6 @@
 import torch
 import os
-import pickle
+import joblib
 from torch.utils.data import Dataset
 from skimage import io
 
@@ -9,8 +9,7 @@ class Data(Dataset):
 
     def __init__(self, data, is_train, transforms=None):
         self.data = data
-        with open('../../data/pickle/item_id_dict.pkl', mode='rb') as f:
-            self.item_id_dict = pickle.load(f)
+        self.item_id_dict = joblib.load('../../data/pickle/label_dict.pkl')
         if is_train:
             self.img_dir = '../../data/img/train_jpg/'
         else:
@@ -32,9 +31,7 @@ class Data(Dataset):
                     img = io.imread(image_path)
                 except:
                     img = torch.zeros(224, 224, 3).float()
-                    print('c')
             else:
-                print('a')
                 img = torch.zeros(224, 224, 3).float()
 
             if self.transforms:

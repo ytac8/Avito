@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import torch
 
@@ -8,7 +7,7 @@ class Predictor():
     def __init__(self, data_loader, model, cuda, item_id_dict, is_train=True):
         self.data_loader = data_loader
         self.device = torch.device("cuda" if cuda else "cpu")
-        self.item_id_dict = {v: k for k, v in item_id_dict.items()}
+        self.item_id_invdict = {v: k for k, v in item_id_dict.items()}
         self.is_train = is_train
         self.model = model.eval()
         if not is_train:
@@ -24,20 +23,16 @@ class Predictor():
 
             for batch_i, batch in enumerate(self.data_loader):
                 input_variable = batch['image'].to(self.device)
-                item_ids = self.item_id_decode(
-                    batch['item_id'].view(-1).tolist())
+                item_id = batch['item_id'].view(-1).detach().tolist()
+                item_id = [self.item_id_invdict[x] for x in item_id]
                 predict = self.model(input_variable)
                 target = batch['target'].view(-1).tolist()
                 target_list.extend(target)
 
-                item_id_list.extend(item_ids)
+                item_id_list += item_id
                 pred_list.extend(predict.view(-1).tolist())
 
             return pred_list, item_id_list, target_list
-
-    def item_id_decode(self, item_id_list):
-        item_id_list = [self.item_id_dict[x] for x in item_id_list]
-        return item_id_list
 
     def output_prediction(self):
         item_id = pd.Series(self.item_id_list)
