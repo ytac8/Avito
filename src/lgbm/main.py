@@ -14,13 +14,24 @@ def main():
         '../../data/features/test_image_feature.h5', 'table')
     preprocessor = Preprocessor('../../data/features/default_feature.pkl')
     preprocessor.add_feture(train_image_feature, test_image_feature, 'image')
-    train_feature, test_feature, train_target, feature_names, categorical = preprocessor.get_feature_vec()
+    features = preprocessor.get_feature_vec()
+
+    train_and_predict(features)
+
+
+def train_and_predict(features):
+
+    train_feature = features['x_train']
+    test_feature = features['x_test']
+    train_target = features['y_train']
+    feature_names = features['feature_names']
+    categorical = features['categorical']
 
     # parameters
     rounds = 50000
-    early_stop_rounds = 500
-    num_leaves = 255
-    learning_rate = 0.025
+    early_stop_rounds = 600
+    num_leaves = 1023
+    learning_rate = 0.02
 
     params = {
         'objective': 'regression',
@@ -28,16 +39,19 @@ def main():
         'num_leaves': num_leaves,
         'max_depth': -1,
         'learning_rate': learning_rate,
+        'max_bin': 512,
         'feature_fraction': 0.5,
         'bagging_fraction': 0.7,
-        'max_bin': 512,
         'verbosity': -1,
+        'reg_alpha': 0,
+        'reg_lambda': 5,
+        'scale_pos_weight': 200
     }
 
     print('Number of features:', len(feature_names))
 
     x_train, x_val, y_train, y_val = train_test_split(
-        train_feature, train_target, test_size=0.3, random_state=114514)
+        train_feature, train_target, test_size=0.2, random_state=114514)
 
     dtrain = lgb.Dataset(x_train, label=y_train,
                          feature_name=list(feature_names),

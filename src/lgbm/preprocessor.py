@@ -58,9 +58,12 @@ class Preprocessor():
             gc.collect()
 
     def get_feature_vec(self):
-        return (self.feature['x_train'], self.feature['x_test'],
-                self.feature['y_train'], self.feature['feature_names'],
-                self.feature['categorical_feature_name'])
+        return {'x_train': self.feature['x_train'],
+                'x_test': self.feature['x_test'],
+                'y_train': self.feature['y_train'],
+                'feature_names': self.feature['feature_names'],
+                'categorical': self.feature['categorical_feature_name']
+                }
 
     def add_feture(self, added_train_df, added_test_df, feature_name_prefix=''):
 
