@@ -24,19 +24,13 @@ def main(epochs, is_train=1):
     checkpoint_path = None
 
     # learning parameters
-    save_epoch = 1
+    save_epoch = 5
     batch_size = 256
-    learning_rate = 0.1
+    learning_rate = 0.01
     output_size = 1
     val_ratio = 0.2
 
-    # model = VGG16FeatureExtractor()
     model = vgg16_bn(pretrained=True)
-
-    # for param in model.parameters():
-    #    param.requires_grad = False
-    # num_features = model.fc.in_features
-    # model.fc = nn.Linear(num_features, output_size)
     model.classifier = nn.Sequential(
         nn.Linear(512 * 7 * 7, 4096),
         nn.ReLU(True),
@@ -44,11 +38,14 @@ def main(epochs, is_train=1):
         nn.Linear(4096, 4096),
         nn.ReLU(True),
         nn.Dropout(),
-        nn.Linear(4096, 512),
-        nn.Linear(512, 128),
-        nn.Linear(128, 1),
-        nn.Sigmoid()
+        nn.Linear(4096, 1),
     )
+
+    # model = resnet152(pretrained=True)
+    # for param in model.parameters():
+    #     param.requires_grad = False
+    # num_features = model.fc.in_features
+    # model.fc = nn.Linear(num_features, output_size)
     item_id_dict = joblib.load('../../data/pickle/label_dict.pkl')
 
     if torch.cuda.is_available():
@@ -68,16 +65,16 @@ def main(epochs, is_train=1):
 
         del df
         gc.collect()
-        print('data loaded!')
 
         train_loader = dataset(train_df, batch_size, is_train)
         val_loader = dataset(val_df, batch_size, is_train)
+        print('data loaded!')
 
         optimizer = Optimizer(
             model, model.parameters(), lr=learning_rate)
         criterion = nn.MSELoss().to(device)
         model = nn.DataParallel(model)
-        trainer = Trainer(train_loader, val_loader,  model, criterion,
+        trainer = Trainer(train_loader, val_loader, model, criterion,
                           optimizer, use_cuda, n_epochs, save_epoch)
         # training
         print('now training')
