@@ -47,8 +47,7 @@ class Trainer():
 
                 running_loss += loss.item()
                 if i % self.valid_interval == self.valid_interval - 1:
-                    # val_score = self.validate()
-                    val_score = running_loss / self.valid_interval
+                    val_score = self.validate()
                     print('[%d], [%5d] loss: %.3f validataion score: %.5f' %
                           (epoch, i + 1, running_loss / self.valid_interval, val_score))
 
@@ -70,14 +69,17 @@ class Trainer():
 
     def validate(self):
         mse = 0.0
+        dataset_length = 0
+        self.model.eval()
         with torch.no_grad():
             for batch_i, batch in enumerate(self.val_loader):
+                dataset_length += batch['target'].size(0)
                 input_variable = batch['image'].to(self.device)
                 target = batch['target'].view(-1).to(self.device)
                 predict = self.model(input_variable).view(-1)
                 mse += torch.sum((predict - target) **
                                  2).to("cpu").detach().numpy()
-            return np.sqrt(mse / len(self.val_loader))
+            return np.sqrt(mse / dataset_length)
 
     def save_model(self, epoch, best_iter, val_score):
         model_filename = '../output/save_point/' + \

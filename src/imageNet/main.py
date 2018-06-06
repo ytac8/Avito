@@ -4,6 +4,7 @@ import torch.nn as nn
 import argparse
 import pickle
 import pandas as pd
+import joblib
 from torch.utils.data import DataLoader
 from trainer import Trainer
 from predictor import Predictor
@@ -23,15 +24,29 @@ def main(epochs, is_train=1):
     checkpoint_path = None
 
     # learning parameters
-    save_epoch = 1
+    save_epoch = 5
     batch_size = 256
-    learning_rate = 0.1
+    learning_rate = 0.01
     output_size = 1
     val_ratio = 0.2
 
-    model = VGG16FeatureExtractor()
-    with open('../../data/pickle/item_id_dict.pkl', mode='rb') as f:
-        item_id_dict = pickle.load(f)
+    model = vgg16_bn(pretrained=True)
+    model.classifier = nn.Sequential(
+        nn.Linear(512 * 7 * 7, 4096),
+        nn.ReLU(True),
+        nn.Dropout(),
+        nn.Linear(4096, 4096),
+        nn.ReLU(True),
+        nn.Dropout(),
+        nn.Linear(4096, 1),
+    )
+
+    # model = resnet152(pretrained=True)
+    # for param in model.parameters():
+    #     param.requires_grad = False
+    # num_features = model.fc.in_features
+    # model.fc = nn.Linear(num_features, output_size)
+    item_id_dict = joblib.load('../../data/pickle/label_dict.pkl')
 
     if torch.cuda.is_available():
         print('use cuda')
@@ -41,25 +56,25 @@ def main(epochs, is_train=1):
     if is_train:
         df = pd.read_csv('../../data/unzipped/train.csv')
         df = df.sample(frac=1, random_state=114514).reset_index(drop=True)
-        # train_df = df[int(len(df) * val_ratio):].reset_index(drop=True)
-        # val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
+        train_df = df[int(len(df) * val_ratio):].reset_index(drop=True)
+        val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
 
         # debug
-        train_df = df[3000:10000].reset_index(drop=True)
-        val_df = df[:3000].reset_index(drop=True)
+        # train_df = df[3000:10000].reset_index(drop=True)
+        # val_df = df[:3000].reset_index(drop=True)
 
         del df
         gc.collect()
-        print('data loaded!')
 
         train_loader = dataset(train_df, batch_size, is_train)
         val_loader = dataset(val_df, batch_size, is_train)
+        print('data loaded!')
 
         optimizer = Optimizer(
             model, model.parameters(), lr=learning_rate)
         criterion = nn.MSELoss().to(device)
         model = nn.DataParallel(model)
-        trainer = Trainer(train_loader, val_loader,  model, criterion,
+        trainer = Trainer(train_loader, val_loader, model, criterion,
                           optimizer, use_cuda, n_epochs, save_epoch)
         # training
         print('now training')
@@ -69,8 +84,6 @@ def main(epochs, is_train=1):
     else:
         print('test prediction')
         test_df = pd.read_csv('../../data/unzipped/test.csv')
-        with open('../../data/pickle/item_id_dict.pkl', mode='rb') as f:
-            item_id_dict = pickle.load(f)
 
         test_loader = dataset(
             test_df,  batch_size, is_train)
