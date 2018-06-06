@@ -29,9 +29,9 @@ def train_and_predict(features):
 
     # parameters
     rounds = 50000
-    early_stop_rounds = 600
+    early_stop_rounds = 500
     num_leaves = 1023
-    learning_rate = 0.02
+    learning_rate = 0.01
 
     params = {
         'objective': 'regression',
@@ -39,13 +39,12 @@ def train_and_predict(features):
         'num_leaves': num_leaves,
         'max_depth': -1,
         'learning_rate': learning_rate,
-        'max_bin': 512,
+        'max_bin': 1024,
         'feature_fraction': 0.5,
         'bagging_fraction': 0.7,
         'verbosity': -1,
         'reg_alpha': 0,
-        'reg_lambda': 5,
-        'scale_pos_weight': 200
+        'reg_lambda': 3,
     }
 
     print('Number of features:', len(feature_names))
@@ -67,7 +66,7 @@ def train_and_predict(features):
                       num_boost_round=rounds,
                       evals_result=evals_result,
                       early_stopping_rounds=early_stop_rounds,
-                      verbose_eval=300)
+                      verbose_eval=250)
 
     sub = pd.read_csv('../../data/unzipped/sample_submission.csv')
     valid_score = evals_result['valid']['rmse'][model.best_iteration - 1]
