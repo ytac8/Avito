@@ -10,46 +10,35 @@ from image_preprocess import Rescale, RandomCrop, ToTensor
 
 
 def main():
+
     # initialize
     use_cuda = torch.cuda.is_available()
     batch_size = 128
 
     model = VGG16FeatureExtractor()
 
-    item_id_dict = joblib.load('../../data/pickle/label_dict.pkl')
-    item_id_invdict = {v: k for k, v in item_id_dict.items()}
     device = "cuda" if use_cuda else "cpu"
     model.to(device)
-    # model = nn.DataParallel(model)
     model.eval()
-    # for t in ['train', 'test']:
-    for t in ['test']:
+    for t in ['train', 'test']:
         if t == 'train':
             train_df = pd.read_csv('../../data/unzipped/train.csv')
-            train_df = train_df.sample(
-                frac=1, random_state=114514).reset_index(drop=True)
             data_loader = set_data_loader(train_df, batch_size, True)
+            item_id_series = train_df.item_id
         else:
             test_df = pd.read_csv('../../data/unzipped/test.csv')
-            test_df = test_df.sample(
-                frac=1, random_state=114514).reset_index(drop=True)
             data_loader = set_data_loader(test_df, batch_size, False)
+            item_id_series = test_df.item_id
 
         feature_list = []
-        item_id_list = []
 
         with torch.no_grad():
             for batch_i, batch in enumerate(data_loader):
-                item_id = batch['item_id'].view(-1).detach().tolist()
-                item_id = [item_id_invdict[x] for x in item_id]
                 input = batch['image'].to(device)
                 feature = model(input).to('cpu').detach().tolist()
-                item_id_list += item_id
                 feature_list += feature
 
-        item_id_series = pd.Series(item_id_list)
         feature_df = pd.DataFrame(feature_list)
-
         feature_df['item_id'] = item_id_series
         feature_df.to_hdf(t + "_image_feature.h5", 'table',
                           complib='blosc', complevel=9)
