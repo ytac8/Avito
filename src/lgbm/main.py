@@ -30,7 +30,7 @@ def train_and_predict(features):
     # parameters
     rounds = 50000
     early_stop_rounds = 500
-    num_leaves = 1023
+    num_leaves = 2023
     learning_rate = 0.01
 
     params = {
@@ -39,12 +39,12 @@ def train_and_predict(features):
         'num_leaves': num_leaves,
         'max_depth': -1,
         'learning_rate': learning_rate,
-        'max_bin': 1024,
         'feature_fraction': 0.5,
         'bagging_fraction': 0.7,
         'verbosity': -1,
-        'reg_alpha': 0,
-        'reg_lambda': 3,
+        'reg_alpha': 1,
+        'reg_lambda': 5,
+        'max_bin': 255,
     }
 
     print('Number of features:', len(feature_names))

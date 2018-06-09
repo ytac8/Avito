@@ -30,22 +30,22 @@ def main(epochs, is_train=1):
     output_size = 1
     val_ratio = 0.2
 
-    model = vgg16_bn(pretrained=True)
-    model.classifier = nn.Sequential(
-        nn.Linear(512 * 7 * 7, 4096),
-        nn.ReLU(True),
-        nn.Dropout(),
-        nn.Linear(4096, 4096),
-        nn.ReLU(True),
-        nn.Dropout(),
-        nn.Linear(4096, 1),
-    )
+    # model = vgg16_bn(pretrained=True)
+    # model.classifier = nn.Sequential(
+    #     nn.Linear(512 * 7 * 7, 4096),
+    #     nn.ReLU(True),
+    #     nn.Dropout(),
+    #     nn.Linear(4096, 4096),
+    #     nn.ReLU(True),
+    #     nn.Dropout(),
+    #     nn.Linear(4096, 1),
+    # )
 
-    # model = resnet152(pretrained=True)
+    model = resnet152(pretrained=True)
     # for param in model.parameters():
     #     param.requires_grad = False
-    # num_features = model.fc.in_features
-    # model.fc = nn.Linear(num_features, output_size)
+    num_features = model.fc.in_features
+    model.fc = nn.Linear(num_features, output_size)
     item_id_dict = joblib.load('../../data/pickle/label_dict.pkl')
 
     if torch.cuda.is_available():

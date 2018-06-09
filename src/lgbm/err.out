@@ -1,0 +1,28 @@
+/home/yoshikawa/.pyenv/versions/3.6.4/lib/python3.6/site-packages/lightgbm/basic.py:1036: UserWarning: Using categorical_feature in Dataset.
+  warnings.warn('Using categorical_feature in Dataset.')
+/home/yoshikawa/.pyenv/versions/3.6.4/lib/python3.6/site-packages/lightgbm/basic.py:681: UserWarning: categorical_feature in param dict is overrided.
+  warnings.warn('categorical_feature in param dict is overrided.')
+/home/yoshikawa/.pyenv/versions/3.6.4/lib/python3.6/site-packages/lightgbm/basic.py:447: UserWarning: Converting data to scipy sparse matrix.
+  warnings.warn('Converting data to scipy sparse matrix.')
+Number of features: 51331
+Training until validation scores don't improve for 500 rounds.
+[250]	valid's rmse: 0.222559
+[500]	valid's rmse: 0.219079
+[750]	valid's rmse: 0.217782
+[1000]	valid's rmse: 0.217124
+[1250]	valid's rmse: 0.216717
+[1500]	valid's rmse: 0.216418
+[1750]	valid's rmse: 0.216214
+[2000]	valid's rmse: 0.21608
+[2250]	valid's rmse: 0.215994
+[2500]	valid's rmse: 0.215912
+[2750]	valid's rmse: 0.215865
+[3000]	valid's rmse: 0.215825
+[3250]	valid's rmse: 0.21581
+[3500]	valid's rmse: 0.215797
+[3750]	valid's rmse: 0.215785
+[4000]	valid's rmse: 0.215784
+[4250]	valid's rmse: 0.215788
+[4500]	valid's rmse: 0.215793
+Early stopping, best iteration is:
+[4101]	valid's rmse: 0.215779
