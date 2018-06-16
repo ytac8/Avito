@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
-import gc
 from preprocessor import Preprocessor
 from sklearn.model_selection import train_test_split
 
@@ -9,9 +8,9 @@ from sklearn.model_selection import train_test_split
 def main():
 
     train_image_feature = pd.read_hdf(
-        '../../data/features/train_image_feature.h5', 'table')
+        '../../data/features/train2_image_feature.h5', 'table')
     test_image_feature = pd.read_hdf(
-        '../../data/features/test_image_feature.h5', 'table')
+        '../../data/features/test2_image_feature.h5', 'table')
     preprocessor = Preprocessor('../../data/features/default_feature.pkl')
     preprocessor.add_feture(train_image_feature, test_image_feature, 'image')
     features = preprocessor.get_feature_vec()
@@ -30,19 +29,21 @@ def train_and_predict(features):
     # parameters
     rounds = 50000
     early_stop_rounds = 500
-    num_leaves = 2023
+    num_leaves = 1500
     learning_rate = 0.01
 
     params = {
+        'boosting_type': 'gbdt',
         'objective': 'regression',
         'metric': 'rmse',
         'num_leaves': num_leaves,
         'max_depth': -1,
         'learning_rate': learning_rate,
-        'feature_fraction': 0.5,
+        'feature_fraction': 0.4,
         'bagging_fraction': 0.7,
+        'bagging_freq': 3,
         'verbosity': -1,
-        'reg_alpha': 1,
+        'reg_alpha': 2,
         'reg_lambda': 5,
         'max_bin': 255,
     }

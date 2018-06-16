@@ -4,7 +4,7 @@ import torch
 
 class CharCNN(nn.Module):
 
-    def __init__(self, feature_dim, dropout_p, output_size=1, filter_num=256):
+    def __init__(self, feature_dim, dropout_p, output_size, filter_num=256):
         super(CharCNN, self).__init__()
 
         self.filter_num = filter_num
@@ -38,7 +38,7 @@ class CharCNN(nn.Module):
             nn.Dropout(p=dropout_p)
         )
 
-        self.fc3 = nn.Linear(1024, 1)
+        self.fc3 = nn.Linear(1024, output_size)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, input):

@@ -47,6 +47,6 @@ class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
     def __call__(self, image):
-        # image = image / 255
+        image = image / 255
         image = image.transpose((2, 0, 1))
         return torch.from_numpy(image)
