@@ -10,10 +10,7 @@ from trainer import Trainer
 from predictor import Predictor
 from dataset import Data
 from optimizer import Optimizer
-from torchvision.models import resnet152, resnet18, resnet50, vgg16_bn
-from feature_extractor import VGG16FeatureExtractor
-from torchvision import transforms
-from image_preprocess import RandomCrop, Rescale, ToTensor
+from model import nnmodel
 
 
 def main(epochs, is_train=1):
@@ -29,24 +26,7 @@ def main(epochs, is_train=1):
     learning_rate = 0.01
     output_size = 1
     val_ratio = 0.2
-
-    # model = vgg16_bn(pretrained=True)
-    # model.classifier = nn.Sequential(
-    #     nn.Linear(512 * 7 * 7, 4096),
-    #     nn.ReLU(True),
-    #     nn.Dropout(),
-    #     nn.Linear(4096, 4096),
-    #     nn.ReLU(True),
-    #     nn.Dropout(),
-    #     nn.Linear(4096, 1),
-    # )
-
-    model = resnet152(pretrained=True)
-    # for param in model.parameters():
-    #     param.requires_grad = False
-    num_features = model.fc.in_features
-    model.fc = nn.Linear(num_features, output_size)
-    item_id_dict = joblib.load('../../data/pickle/label_dict.pkl')
+    model =
 
     if torch.cuda.is_available():
         print('use cuda')
@@ -83,6 +63,7 @@ def main(epochs, is_train=1):
 
     else:
         print('test prediction')
+        item_id_dict = joblib.load('../../data/pickle/label_dict.pkl')
         test_df = pd.read_csv('../../data/unzipped/test.csv')
 
         test_loader = dataset(
@@ -98,16 +79,6 @@ def main(epochs, is_train=1):
         submission_df['item_id'] = item_id
         submission_df['deal_probability'] = deal_probability
         submission_df.to_csv('../output/predictions/predict.csv', index=None)
-
-
-def dataset(data, batch_size, is_train):
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-    dataset = Data(data, is_train, transforms=transforms.Compose(
-        [Rescale(256), RandomCrop(224), ToTensor(), normalize]))
-    data_loader = DataLoader(
-        dataset, batch_size=batch_size, shuffle=False, num_workers=16)
-    return data_loader
 
 
 if __name__ == '__main__':
