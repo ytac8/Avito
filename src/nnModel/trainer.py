@@ -6,7 +6,7 @@ import numpy as np
 class Trainer():
 
     def __init__(self, train_loader, val_loader, model, criterion, optimizer,
-                 use_cuda, num_epoch, save_epoch=15, clip=10,
+                 use_cuda, num_epoch, save_epoch=5, clip=5,
                  valid_interval=500):
         self.train_loader = train_loader
         self.val_loader = val_loader

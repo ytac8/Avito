@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
+import joblib
 from preprocessor import Preprocessor
 from sklearn.model_selection import train_test_split
 
@@ -11,11 +12,43 @@ def main():
         '../../data/features/train2_image_feature.h5', 'table')
     test_image_feature = pd.read_hdf(
         '../../data/features/test2_image_feature.h5', 'table')
+
+    train_description, train_title, test_description, test_title = get_fasttext_feature()
+
     preprocessor = Preprocessor('../../data/features/default_feature.pkl')
+    # preprocessor = Preprocessor()
     preprocessor.add_feture(train_image_feature, test_image_feature, 'image')
+    preprocessor.add_feture(train_title, test_title, 'title')
+    preprocessor.add_feture(train_description, test_description, 'description')
     features = preprocessor.get_feature_vec()
+    joblib.dump(features, 'fasttext_vgg16_feature.joblib', compress=3)
+    print('complete data loading')
 
     train_and_predict(features)
+
+
+def get_fasttext_feature():
+    train_item_id = pd.read_csv('../../data/unzipped/train.csv').item_id
+    test_item_id = pd.read_csv('../../data/unzipped/train.csv').item_id
+    train_description = joblib.load(
+        '../../data/features/train_description_sentence_vec.gz')
+    train_title = joblib.load(
+        '../../data/features/train_title_sentence_vec.gz')
+    test_description = joblib.load(
+        '../../data/features/test_description_sentence_vec.gz')
+    test_title = joblib.load('../../data/features/test_title_sentence_vec.gz')
+
+    train_description = pd.DataFrame(np.asarray(train_description))
+    train_title = pd.DataFrame(np.asarray(train_title))
+    test_description = pd.DataFrame(np.asarray(test_description))
+    test_title = pd.DataFrame(np.asarray(test_title))
+
+    train_description = pd.concat([train_description, train_item_id], axis=1)
+    test_description = pd.concat([test_description, test_item_id], axis=1)
+    train_title = pd.concat([train_title, train_item_id], axis=1)
+    test_title = pd.concat([test_title, test_item_id], axis=1)
+
+    return train_description, train_title, test_description, test_title
 
 
 def train_and_predict(features):
@@ -29,8 +62,8 @@ def train_and_predict(features):
     # parameters
     rounds = 50000
     early_stop_rounds = 500
-    num_leaves = 1500
-    learning_rate = 0.01
+    num_leaves = 1023
+    learning_rate = 0.02
 
     params = {
         'boosting_type': 'gbdt',
@@ -39,13 +72,10 @@ def train_and_predict(features):
         'num_leaves': num_leaves,
         'max_depth': -1,
         'learning_rate': learning_rate,
-        'feature_fraction': 0.4,
+        'feature_fraction': 0.5,
         'bagging_fraction': 0.7,
         'bagging_freq': 3,
         'verbosity': -1,
-        'reg_alpha': 2,
-        'reg_lambda': 5,
-        'max_bin': 255,
     }
 
     print('Number of features:', len(feature_names))
@@ -67,7 +97,7 @@ def train_and_predict(features):
                       num_boost_round=rounds,
                       evals_result=evals_result,
                       early_stopping_rounds=early_stop_rounds,
-                      verbose_eval=250)
+                      verbose_eval=500)
 
     sub = pd.read_csv('../../data/unzipped/sample_submission.csv')
     valid_score = evals_result['valid']['rmse'][model.best_iteration - 1]

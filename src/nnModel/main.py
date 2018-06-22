@@ -2,7 +2,6 @@ import gc
 import torch
 import torch.nn as nn
 import argparse
-import pickle
 import pandas as pd
 import joblib
 from torch.utils.data import DataLoader
@@ -10,8 +9,8 @@ from trainer import Trainer
 from predictor import Predictor
 from dataset import Data
 from optimizer import Optimizer
-from model import nnmodel
-
+from model import NNModel
+from sklearn.utils import shuffle
 
 def main(epochs, is_train=1):
     # initialize
@@ -26,7 +25,7 @@ def main(epochs, is_train=1):
     learning_rate = 0.01
     output_size = 1
     val_ratio = 0.2
-    model =
+    model = NNModel(output_size=output_size)
 
     if torch.cuda.is_available():
         print('use cuda')
@@ -34,20 +33,44 @@ def main(epochs, is_train=1):
         model.to(device)
 
     if is_train:
-        df = pd.read_csv('../../data/unzipped/train.csv')
-        df = df.sample(frac=1, random_state=114514).reset_index(drop=True)
-        train_df = df[int(len(df) * val_ratio):].reset_index(drop=True)
-        val_df = df[:int(len(df) * val_ratio)].reset_index(drop=True)
+        base_data = joblib.load('../../data/features/train_base_feature.gz')
+        description_data = joblib.load(
+            '../../data/features/train_description_vec.gz')
+        title_data = joblib.load(
+            '../../data/features/train_title_vec.gz')
+
+        base_data, train_description_data, train_title_data = shuffle(
+            base_data, description_data, title_data)
+
+        train_base_data = base_data[int(
+            len(base_data) * val_ratio):].reset_index(drop=True)
+        val_base_data = base_data[:int(
+            len(base_data) * val_ratio)].reset_index(drop=True)
+        train_description_data = description_data[int(
+            len(base_data) * val_ratio):].reset_index(drop=True)
+        val_description_data = description_data[:int(
+            len(base_data) * val_ratio)].reset_index(drop=True)
+        train_title_data = title_data[int(
+            len(base_data) * val_ratio):].reset_index(drop=True)
+        val_title_data = title_data[:int(
+            len(base_data) * val_ratio)].reset_index(drop=True)
 
         # debug
         # train_df = df[3000:10000].reset_index(drop=True)
         # val_df = df[:3000].reset_index(drop=True)
 
-        del df
+        del base_data, description_data, title_data
         gc.collect()
 
-        train_loader = dataset(train_df, batch_size, is_train)
-        val_loader = dataset(val_df, batch_size, is_train)
+        train_dataset = Data(train_base_data, train_title_data,
+                             train_description_data, is_train)
+        val_dataset = Data(val_base_data, val_title_data,
+                           val_description_data, is_train)
+
+        train_loader = DataLoader(
+            train_dataset, batch_size=128, num_workers=8)
+        val_loader = DataLoader(
+            val_dataset, batch_size=128, num_workers=8)
         print('data loaded!')
 
         optimizer = Optimizer(
@@ -56,6 +79,7 @@ def main(epochs, is_train=1):
         model = nn.DataParallel(model)
         trainer = Trainer(train_loader, val_loader, model, criterion,
                           optimizer, use_cuda, n_epochs, save_epoch)
+
         # training
         print('now training')
         trainer.train()
@@ -66,7 +90,7 @@ def main(epochs, is_train=1):
         item_id_dict = joblib.load('../../data/pickle/label_dict.pkl')
         test_df = pd.read_csv('../../data/unzipped/test.csv')
 
-        test_loader = dataset(
+        test_loader = Data(
             test_df,  batch_size, is_train)
         predictor = Predictor(test_loader, model,
                               use_cuda, item_id_dict, is_train)

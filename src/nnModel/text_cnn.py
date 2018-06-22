@@ -19,7 +19,7 @@ class TextCnn(nn.Module):
             relu1=nn.ReLU(),
             linear2=nn.Linear(1024, 512),
             bn2=nn.BatchNorm1d(512),
-            relu2=nn.ReLU(),
+            relu2=nn.ReLU()
         )
 
     def forward(self, input):

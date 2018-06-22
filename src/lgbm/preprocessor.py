@@ -113,21 +113,24 @@ class Preprocessor():
 
     def _create_feature(self, path=None):
         self._description_preprocess()
-        count_feature = self._get_counts_feature()
+        # count_feature = self._get_counts_feature()
         self._label_encode()
         feature_names = self.feature_names + self.categorical_feature_names
 
-        x_train = scipy.sparse.hstack([
-            count_feature['train_desc'],
-            count_feature['train_title'],
-            self.train_df.loc[:, feature_names]
-        ], format='csr')
+        # x_train = scipy.sparse.hstack([
+        #     count_feature['train_desc'],
+        #     count_feature['train_title'],
+        #     self.train_df.loc[:, feature_names]
+        # ], format='csr')
 
-        x_test = scipy.sparse.hstack([
-            count_feature['test_desc'],
-            count_feature['test_title'],
-            self.test_df.loc[:, feature_names]
-        ], format='csr')
+        # x_test = scipy.sparse.hstack([
+        #     count_feature['test_desc'],
+        #     count_feature['test_title'],
+        #     self.test_df.loc[:, feature_names]
+        # ], format='csr')
+
+        x_train = scipy.sparse.csr_matrix(self.train_df.loc[:, feature_names])
+        x_test = scipy.sparse.csr_matrix(self.test_df.loc[:, feature_names])
 
         y_train = self.train_df.loc[:, self.target_name]
 
@@ -136,7 +139,8 @@ class Preprocessor():
             'x_test': x_test,
             'y_train': y_train,
             'categorical_feature_name': self.categorical_feature_names,
-            'feature_names': self._get_feature_names(),
+            # 'feature_names': self._get_feature_names(),
+            'feature_names': self.feature_names + self.categorical_feature_names,
             'train_item_id': self.train_df.item_id,
             'test_item_id': self.test_df.item_id
         }
