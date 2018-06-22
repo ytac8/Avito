@@ -29,14 +29,17 @@ class Data(Dataset):
                 try:
                     img = io.imread(image_path)
                 except:
-                    img = torch.zeros(224, 224, 3).float()
+                    # img = torch.zeros(224, 224, 3).float()
+                    img = torch.zeros(299, 299, 3).float()
             else:
-                img = torch.zeros(224, 224, 3).float()
+                # img = torch.zeros(224, 224, 3).float()
+                img = torch.zeros(299, 299, 3).float()
 
             if self.transforms:
                 img = self.transforms(img).float()
         else:
-            img = torch.zeros(3, 224, 224).float()
+            # img = torch.zeros(3, 224, 224).float()
+            img = torch.zeros(3, 299, 299).float()
 
         if self.is_train:
             target = self.data.deal_probability.iloc[idx]

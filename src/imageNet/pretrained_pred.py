@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import joblib
 import pandas as pd
 from torch.utils.data import DataLoader
 from dataset import Data
@@ -13,11 +12,11 @@ def main():
 
     # initialize
     use_cuda = torch.cuda.is_available()
-    batch_size = 512
+    batch_size = 1024
 
     device = "cuda" if use_cuda else "cpu"
-    model_list = [resnet152(pretrained=True)]
-    model_name_list = ['resnet']
+    model_list = [inception_v3(pretrained=True)]
+    model_name_list = ['inception']
 
     for t in ['train', 'test']:
         # for t in ['test']:
@@ -56,7 +55,7 @@ def set_data_loader(data, batch_size, is_train):
                                      std=[0.229, 0.224, 0.225])
 
     dataset = Data(data, is_train=is_train, transforms=transforms.Compose(
-        [Rescale(256), RandomCrop(224), ToTensor(), normalize]))
+        [Rescale(334), RandomCrop(299), ToTensor(), normalize]))
     data_loader = DataLoader(
         dataset, batch_size=batch_size, shuffle=False, num_workers=16)
     return data_loader
