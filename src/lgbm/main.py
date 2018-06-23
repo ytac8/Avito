@@ -8,22 +8,26 @@ from sklearn.model_selection import train_test_split
 
 def main():
 
-    train_image_feature = pd.read_hdf(
-        '../../data/features/train2_image_feature.h5', 'table')
-    test_image_feature = pd.read_hdf(
-        '../../data/features/test2_image_feature.h5', 'table')
+    # train_image_feature = pd.read_hdf(
+    #     '../../data/features/train2_image_feature.h5', 'table')
+    # test_image_feature = pd.read_hdf(
+    #     '../../data/features/test2_image_feature.h5', 'table')
+    # train_diff_day = joblib.load('../../data/features/train_diff_days')
+    # test_diff_day = joblib.load('../../data/features/test_diff_days')
 
-    train_description, train_title, test_description, test_title = get_fasttext_feature()
+    # train_description, train_title, test_description, test_title = get_fasttext_feature()
 
-    preprocessor = Preprocessor('../../data/features/default_feature.pkl')
-    # preprocessor = Preprocessor()
-    preprocessor.add_feture(train_image_feature, test_image_feature, 'image')
-    preprocessor.add_feture(train_title, test_title, 'title')
-    preprocessor.add_feture(train_description, test_description, 'description')
-    features = preprocessor.get_feature_vec()
-    joblib.dump(features, 'fasttext_vgg16_feature.joblib', compress=3)
+    # preprocessor = Preprocessor('../../data/features/default_feature.pkl')
+    # # preprocessor = Preprocessor()
+    # preprocessor.add_feture(train_image_feature, test_image_feature, 'image')
+    # preprocessor.add_feture(train_title, test_title, 'title')
+    # preprocessor.add_feture(train_description, test_description, 'description')
+    # preprocessor.add_feture(train_diff_day, test_diff_day, 'diff_day')
+    # features = preprocessor.get_feature_vec()
+
+    features = joblib.load('../../data/features/fasttext_vgg16.joblib')
     print('complete data loading')
-
+    print('training start...!')
     train_and_predict(features)
 
 
@@ -62,8 +66,8 @@ def train_and_predict(features):
     # parameters
     rounds = 50000
     early_stop_rounds = 500
-    num_leaves = 1023
-    learning_rate = 0.02
+    num_leaves = 1500
+    learning_rate = 0.01
 
     params = {
         'boosting_type': 'gbdt',
@@ -72,9 +76,9 @@ def train_and_predict(features):
         'num_leaves': num_leaves,
         'max_depth': -1,
         'learning_rate': learning_rate,
-        'feature_fraction': 0.5,
+        # 'feature_fraction': 0.9,
         'bagging_fraction': 0.7,
-        'bagging_freq': 3,
+        'bagging_freq': 10,
         'verbosity': -1,
     }
 
@@ -97,7 +101,7 @@ def train_and_predict(features):
                       num_boost_round=rounds,
                       evals_result=evals_result,
                       early_stopping_rounds=early_stop_rounds,
-                      verbose_eval=500)
+                      verbose_eval=200)
 
     sub = pd.read_csv('../../data/unzipped/sample_submission.csv')
     valid_score = evals_result['valid']['rmse'][model.best_iteration - 1]

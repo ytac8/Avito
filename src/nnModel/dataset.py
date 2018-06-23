@@ -3,7 +3,7 @@ import os
 import joblib
 from torch.utils.data import Dataset
 from skimage import io
-from torchvisoin import transforms
+from torchvision import transforms
 from image_preprocess import RandomCrop, Rescale, ToTensor
 
 
@@ -18,18 +18,21 @@ class Data(Dataset):
         self.is_train = is_train
 
     def __len__(self):
-        return len(self.data)
+        return len(self.base_data)
 
     def __getitem__(self, idx):
         image_name = self.base_data.image[idx]
         image = self.get_image(image_name)
-        title = self.title_feature[idx]
-        description = self.description_data[idx]
-        user_id = self.base_data.user_id[idx]
-        user_type = self.base_data.user_type[idx]
+
+        title = torch.FloatTensor(self.title_data[idx])
+        description = torch.FloatTensor(self.description_data[idx])
+        description = self.text_padding(description, 100)
+        title = self.text_padding(title, 100)
+        user_id = torch.LongTensor(self.base_data.user_id[idx])
+        user_type = torch.LongTensor(self.base_data.user_type[idx])
         region = self.base_data.region[idx]
         city = self.base_data.city[idx]
-        category = self.base_data.category[idx]
+        category = self.base_data.category_name[idx]
         image_top = self.base_data.image_top_1[idx]
         price = self.base_data.price[idx]
         item_seq_num = self.base_data.item_seq_number[idx]
@@ -53,6 +56,11 @@ class Data(Dataset):
 
         return feature
 
+    def text_padding(self, text_data, max_len):
+        padded = torch.zeros(max_len, text_data.size(1))
+        padded[:len(text_data), :] = text_data
+        return padded
+
     def get_image(self, image_name):
         if self.is_train:
             img_dir = '../../data/img/train_jpg/'
@@ -75,7 +83,8 @@ class Data(Dataset):
 
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                          std=[0.229, 0.224, 0.225])
-        img = transforms.Compose(
+        transform = transforms.Compose(
             [Rescale(256), RandomCrop(224), ToTensor(), normalize])
+        img = transform(img).float()
 
         return img

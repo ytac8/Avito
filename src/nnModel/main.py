@@ -2,6 +2,7 @@ import gc
 import torch
 import torch.nn as nn
 import argparse
+import numpy as np
 import pandas as pd
 import joblib
 from torch.utils.data import DataLoader
@@ -11,6 +12,7 @@ from dataset import Data
 from optimizer import Optimizer
 from model import NNModel
 from sklearn.utils import shuffle
+
 
 def main(epochs, is_train=1):
     # initialize
@@ -22,10 +24,9 @@ def main(epochs, is_train=1):
     # learning parameters
     save_epoch = 5
     batch_size = 256
-    learning_rate = 0.01
-    output_size = 1
+    learning_rate = 0.001
     val_ratio = 0.2
-    model = NNModel(output_size=output_size)
+    model = NNModel()
 
     if torch.cuda.is_available():
         print('use cuda')
@@ -38,6 +39,8 @@ def main(epochs, is_train=1):
             '../../data/features/train_description_vec.gz')
         title_data = joblib.load(
             '../../data/features/train_title_vec.gz')
+        description_data = np.asarray(description_data)
+        title_data = np.asarray(title_data)
 
         base_data, train_description_data, train_title_data = shuffle(
             base_data, description_data, title_data)
@@ -47,13 +50,11 @@ def main(epochs, is_train=1):
         val_base_data = base_data[:int(
             len(base_data) * val_ratio)].reset_index(drop=True)
         train_description_data = description_data[int(
-            len(base_data) * val_ratio):].reset_index(drop=True)
+            len(base_data) * val_ratio):]
         val_description_data = description_data[:int(
-            len(base_data) * val_ratio)].reset_index(drop=True)
-        train_title_data = title_data[int(
-            len(base_data) * val_ratio):].reset_index(drop=True)
-        val_title_data = title_data[:int(
-            len(base_data) * val_ratio)].reset_index(drop=True)
+            len(base_data) * val_ratio)]
+        train_title_data = title_data[int(len(base_data) * val_ratio):]
+        val_title_data = title_data[:int(len(base_data) * val_ratio)]
 
         # debug
         # train_df = df[3000:10000].reset_index(drop=True)
@@ -74,7 +75,7 @@ def main(epochs, is_train=1):
         print('data loaded!')
 
         optimizer = Optimizer(
-            model, model.parameters(), lr=learning_rate)
+            model, lr=learning_rate)
         criterion = nn.MSELoss().to(device)
         model = nn.DataParallel(model)
         trainer = Trainer(train_loader, val_loader, model, criterion,

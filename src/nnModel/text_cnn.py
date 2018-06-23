@@ -14,12 +14,12 @@ class TextCnn(nn.Module):
         self.cnn4 = nn.Conv2d(1, 32, (emb_dim, 4))
 
         self.classifier = nn.Sequential(
-            linear1=nn.Linear(128, 1024),
-            bn1=nn.BatchNorm1d(1024),
-            relu1=nn.ReLU(),
-            linear2=nn.Linear(1024, 512),
-            bn2=nn.BatchNorm1d(512),
-            relu2=nn.ReLU()
+            nn.Linear(128, 1024),
+            nn.BatchNorm1d(1024),
+            nn.ReLU(),
+            nn.Linear(1024, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU()
         )
 
     def forward(self, input):
