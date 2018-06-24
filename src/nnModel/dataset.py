@@ -25,17 +25,19 @@ class Data(Dataset):
         image = self.get_image(image_name)
 
         title = torch.FloatTensor(self.title_data[idx])
+        title = self.text_padding(title, 21).unsqueeze(0)
         description = torch.FloatTensor(self.description_data[idx])
-        description = self.text_padding(description, 100)
-        title = self.text_padding(title, 100)
-        user_id = torch.LongTensor(self.base_data.user_id[idx])
-        user_type = torch.LongTensor(self.base_data.user_type[idx])
-        region = self.base_data.region[idx]
-        city = self.base_data.city[idx]
-        category = self.base_data.category_name[idx]
-        image_top = self.base_data.image_top_1[idx]
-        price = self.base_data.price[idx]
-        item_seq_num = self.base_data.item_seq_number[idx]
+        description = self.text_padding(description, 716).unsqueeze(0)
+
+        user_id = torch.LongTensor([self.base_data.user_id[idx]])
+        user_type = torch.LongTensor([self.base_data.user_type[idx]])
+        region = torch.LongTensor([self.base_data.region[idx]])
+        city = torch.LongTensor([self.base_data.city[idx]])
+        category = torch.LongTensor([self.base_data.category_name[idx]])
+        image_top = torch.LongTensor([self.base_data.image_top_1[idx]])
+
+        price = torch.FloatTensor([self.base_data.price[idx]])
+        item_seq_num = torch.FloatTensor([self.base_data.item_seq_number[idx]])
 
         feature = {
             "image": image,

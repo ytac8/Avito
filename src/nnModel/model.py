@@ -15,6 +15,7 @@ class NNModel(nn.Module):
         self.region_embedding = nn.Embedding(28, 4)
         self.city_embedding = nn.Embedding(1752, 32)
         self.image_top_embedding = nn.Embedding(3064, 32)
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.text_cnn = TextCnn(300)
 
@@ -33,18 +34,23 @@ class NNModel(nn.Module):
         )
 
     def forward(self, feature):
-        user_id = self.embedding(feature['user_id'])
-        user_type = self.embedding(feature['user_type'])
-        category = self.embedding(feature['category'])
-        region = self.embedding(feature['region'])
-        city = self.embedding(feature['city'])
-        image_top = self.embedding(feature['image_top'])
+        user_id = self.user_id_embedding(
+            feature['user_id'].to(self.device)).squeeze()
+        user_type = self.user_type_embedding(
+            feature['user_type'].to(self.device)).squeeze()
+        category = self.category_embedding(
+            feature['category'].to(self.device)).squeeze()
+        region = self.region_embedding(
+            feature['region'].to(self.device)).squeeze()
+        city = self.city_embedding(feature['city'].to(self.device)).squeeze()
+        image_top = self.image_top_embedding(
+            feature['image_top'].to(self.device)).squeeze()
 
-        description = self.text_cnn(feature["description"])
-        title = self.text_cnn(feature["description"])
+        description = self.text_cnn(feature["description"].to(self.device))
+        title = self.text_cnn(feature["title"].to(self.device))
 
-        catted = torch.cat([user_id, user_type, category, region,
-                            city, image_top, description, title], dim=1)
+        catted = torch.cat((user_id, user_type, category, region,
+                            city, image_top, description, title), 1)
 
         output = self.classifier(catted)
         return output

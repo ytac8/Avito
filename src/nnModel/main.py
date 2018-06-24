@@ -23,7 +23,7 @@ def main(epochs, is_train=1):
 
     # learning parameters
     save_epoch = 5
-    batch_size = 256
+    batch_size = 512
     learning_rate = 0.001
     val_ratio = 0.2
     model = NNModel()
@@ -57,8 +57,12 @@ def main(epochs, is_train=1):
         val_title_data = title_data[:int(len(base_data) * val_ratio)]
 
         # debug
-        # train_df = df[3000:10000].reset_index(drop=True)
-        # val_df = df[:3000].reset_index(drop=True)
+        # train_base_data = base_data[3000:5000].reset_index(drop=True)
+        # train_description_data = description_data[3000:5000]
+        # train_title_data = title_data[3000:5000]
+        # val_base_data = base_data[:3000].reset_index(drop=True)
+        # val_description_data = description_data[:3000]
+        # val_title_data = title_data[:3000]
 
         del base_data, description_data, title_data
         gc.collect()
@@ -69,9 +73,9 @@ def main(epochs, is_train=1):
                            val_description_data, is_train)
 
         train_loader = DataLoader(
-            train_dataset, batch_size=128, num_workers=8)
+            train_dataset, batch_size=batch_size, num_workers=8)
         val_loader = DataLoader(
-            val_dataset, batch_size=128, num_workers=8)
+            val_dataset, batch_size=batch_size, num_workers=8)
         print('data loaded!')
 
         optimizer = Optimizer(

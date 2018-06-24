@@ -6,8 +6,7 @@ import numpy as np
 class Trainer():
 
     def __init__(self, train_loader, val_loader, model, criterion, optimizer,
-                 use_cuda, num_epoch, save_epoch=5, clip=5,
-                 valid_interval=500):
+                 use_cuda, num_epoch, save_epoch=2, clip=5, valid_interval=1000):
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.model = model.train()
@@ -31,20 +30,21 @@ class Trainer():
 
             for i, batch in enumerate(self.train_loader):
                 self.optimizer.zero_grad()
-                input_variable = batch['feature'].to(self.device).squeeze()
-                target = batch['target'].to(self.device).squeeze()
-                predict = self.model(input_variable)
+                feature = batch
+                target = batch['target'].to(self.device).squeeze().float()
+                predict = self.model(feature).squeeze()
 
                 loss = self.criterion(predict, target)
                 loss.backward()
                 self.optimizer.gradient_clip(self.clip)
                 self.optimizer.step()
-
-            val_score = self.validate(self.model.eval())
-            if val_score < self.best_mse:
-                self.best_model = copy.deepcopy(self.model.state_dict)
-                self.best_mse = val_score
-                self.best_iter = i
+                if i % self.valid_interval == self.valid_interval - 1:
+                    val_score = self.validate(self.model.eval())
+                    print(str(epoch) + ',' + str(i) + ': ' + str(val_score))
+                    if val_score < self.best_mse:
+                        self.best_model = copy.deepcopy(self.model.state_dict)
+                        self.best_mse = val_score
+                        self.best_iter = i
 
             self.model.train()
 
@@ -63,11 +63,10 @@ class Trainer():
         with torch.no_grad():
             for batch_i, batch in enumerate(self.val_loader):
                 dataset_length += batch['target'].size(0)
-                input_variable = batch['feature'].to(self.device).squeeze()
+                input_variable = batch
                 target = batch['target'].to(self.device).squeeze().float()
-                predict = model(input_variable)
+                predict = model(input_variable).squeeze()
 
-                predict = predict[:, 1]
                 mse += torch.sum((predict - target) **
                                  2).to("cpu").detach().numpy()
             return np.sqrt(mse / dataset_length)

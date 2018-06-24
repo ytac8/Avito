@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import lightgbm as lgb
 import joblib
+import gc
+import scipy.sparse
 from preprocessor import Preprocessor
 from sklearn.model_selection import train_test_split
 
@@ -24,6 +26,9 @@ def main():
     # preprocessor.add_feture(train_description, test_description, 'description')
     # preprocessor.add_feture(train_diff_day, test_diff_day, 'diff_day')
     # features = preprocessor.get_feature_vec()
+
+    # features = joblib.dump(
+    #     features, '../../data/features/fasttext_vgg16.joblib', compress=3)
 
     features = joblib.load('../../data/features/fasttext_vgg16.joblib')
     print('complete data loading')
@@ -56,6 +61,13 @@ def get_fasttext_feature():
 
 
 def train_and_predict(features):
+    count_feature = joblib.load(
+        '../../data/tamaki_feature/count_feature_2.joblib')
+    price_feature = joblib.load(
+        '../../data/tamaki_feature/price_feature_bigram.joblib')
+
+    price_feature.drop('item_id', axis=1, inplace=True)
+    count_feature.drop('item_id', axis=1, inplace=True)
 
     train_feature = features['x_train']
     test_feature = features['x_test']
@@ -63,10 +75,37 @@ def train_and_predict(features):
     feature_names = features['feature_names']
     categorical = features['categorical']
 
+    train_count_feature = count_feature[:train_feature.shape[0]]
+    train_price_feature = price_feature[:train_feature.shape[0]]
+    test_count_feature = count_feature[train_feature.shape[0]:]
+    test_price_feature = price_feature[train_feature.shape[0]:]
+
+    train_feature = scipy.sparse.hstack([
+        train_feature,
+        train_count_feature,
+        train_price_feature
+    ])
+
+    test_feature = scipy.sparse.hstack([
+        test_feature,
+        test_count_feature,
+        test_price_feature
+    ])
+
+    feature_names = np.hstack([
+        feature_names,
+        count_feature.columns,
+        price_feature.columns,
+    ])
+
+    del test_count_feature, train_count_feature, train_price_feature,
+    del test_price_feature, count_feature, price_feature
+    gc.collect()
+
     # parameters
     rounds = 50000
     early_stop_rounds = 500
-    num_leaves = 1500
+    num_leaves = 1023
     learning_rate = 0.01
 
     params = {
@@ -76,9 +115,9 @@ def train_and_predict(features):
         'num_leaves': num_leaves,
         'max_depth': -1,
         'learning_rate': learning_rate,
-        # 'feature_fraction': 0.9,
+        'feature_fraction': 0.4,
         'bagging_fraction': 0.7,
-        'bagging_freq': 10,
+        'bagging_freq': 2,
         'verbosity': -1,
     }
 
@@ -95,13 +134,14 @@ def train_and_predict(features):
                          categorical_feature=categorical)
 
     evals_result = {}
+
     model = lgb.train(params, dtrain,
                       valid_sets=[dvalid],
                       valid_names=['valid'],
                       num_boost_round=rounds,
                       evals_result=evals_result,
                       early_stopping_rounds=early_stop_rounds,
-                      verbose_eval=200)
+                      verbose_eval=500)
 
     sub = pd.read_csv('../../data/unzipped/sample_submission.csv')
     valid_score = evals_result['valid']['rmse'][model.best_iteration - 1]

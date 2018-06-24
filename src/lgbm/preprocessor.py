@@ -73,8 +73,8 @@ class Preprocessor():
         added_train_df.drop('item_id', axis=1, inplace=True)
         added_test_df.drop('item_id', axis=1, inplace=True)
 
-        self._change_column_name(added_train_df, 'image')
-        self._change_column_name(added_test_df, 'image')
+        self._change_column_name(added_train_df, feature_name_prefix)
+        self._change_column_name(added_test_df, feature_name_prefix)
         added_column_name = added_train_df.columns
 
         # idをくっつけ直す
