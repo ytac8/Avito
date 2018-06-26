@@ -6,7 +6,7 @@ import numpy as np
 class Trainer():
 
     def __init__(self, train_loader, val_loader, model, criterion, optimizer,
-                 use_cuda, num_epoch, save_epoch=2, clip=5, valid_interval=1000):
+                 use_cuda, num_epoch, save_epoch=2, clip=5, valid_interval=500):
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.model = model.train()
@@ -32,11 +32,12 @@ class Trainer():
                 self.optimizer.zero_grad()
                 feature = batch
                 target = batch['target'].to(self.device).squeeze().float()
-                predict = self.model(feature).squeeze()
+                predict = self.model(feature)
+                predict = predict.squeeze()
 
                 loss = self.criterion(predict, target)
                 loss.backward()
-                self.optimizer.gradient_clip(self.clip)
+                # self.optimizer.gradient_clip(self.clip)
                 self.optimizer.step()
                 if i % self.valid_interval == self.valid_interval - 1:
                     val_score = self.validate(self.model.eval())
@@ -45,8 +46,7 @@ class Trainer():
                         self.best_model = copy.deepcopy(self.model.state_dict)
                         self.best_mse = val_score
                         self.best_iter = i
-
-            self.model.train()
+                    self.model.train()
 
             print('============================')
             print(str(epoch) + 'epoch:', loss.item())
@@ -65,7 +65,7 @@ class Trainer():
                 dataset_length += batch['target'].size(0)
                 input_variable = batch
                 target = batch['target'].to(self.device).squeeze().float()
-                predict = model(input_variable).squeeze()
+                predict = torch.clamp(model(input_variable).squeeze(), 0, 1)
 
                 mse += torch.sum((predict - target) **
                                  2).to("cpu").detach().numpy()

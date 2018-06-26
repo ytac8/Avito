@@ -45,3 +45,27 @@ class TextCnn(nn.Module):
         catted = torch.cat((output1, output2, output3, output4), 1)
         output = self.classifier(catted)
         return output
+
+
+class TextGRU(nn.Module):
+
+    def __init__(self, emb_dim):
+
+        super(TextGRU, self).__init__()
+        self.gru = nn.GRU(emb_dim, 128, 1, batch_first=True)
+        self.classifier = nn.Sequential(
+            nn.Linear(128, 1024),
+            nn.BatchNorm1d(1024),
+            nn.ReLU(),
+            nn.Linear(1024, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU()
+        )
+
+    def forward(self, input):
+        # input = (B * S * H)
+        # self.gru.flatten_parameters()
+        output, h = self.gru(input)
+        output = h.squeeze()
+        output = self.classifier(output)
+        return output

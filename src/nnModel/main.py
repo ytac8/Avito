@@ -1,5 +1,6 @@
 import gc
 import torch
+import scipy.sparse
 import torch.nn as nn
 import argparse
 import numpy as np
@@ -14,7 +15,7 @@ from model import NNModel
 from sklearn.utils import shuffle
 
 
-def main(epochs, is_train=1):
+def main(epochs=10000, is_train=1):
     # initialize
     is_train = True if is_train == 1 else False
     n_epochs = epochs
@@ -22,8 +23,8 @@ def main(epochs, is_train=1):
     checkpoint_path = None
 
     # learning parameters
-    save_epoch = 5
-    batch_size = 512
+    save_epoch = 3
+    batch_size = 1024
     learning_rate = 0.001
     val_ratio = 0.2
     model = NNModel()
@@ -42,8 +43,18 @@ def main(epochs, is_train=1):
         description_data = np.asarray(description_data)
         title_data = np.asarray(title_data)
 
-        base_data, train_description_data, train_title_data = shuffle(
-            base_data, description_data, title_data)
+        count_feature = joblib.load(
+            '../../data/tamaki_feature/count_feature_2.joblib')
+        price_feature = joblib.load(
+            '../../data/tamaki_feature/price_feature_bigram.joblib')
+
+        count_feature.drop('item_id', axis=1, inplace=True)
+        price_feature.drop('item_id', axis=1, inplace=True)
+        price_feature = price_feature[:len(base_data)]
+        count_feature = count_feature[:len(base_data)]
+
+        base_data, train_description_data, train_title_data, count_feature, price_feature = shuffle(
+            base_data, description_data, title_data, count_feature, price_feature)
 
         train_base_data = base_data[int(
             len(base_data) * val_ratio):].reset_index(drop=True)
@@ -55,6 +66,15 @@ def main(epochs, is_train=1):
             len(base_data) * val_ratio)]
         train_title_data = title_data[int(len(base_data) * val_ratio):]
         val_title_data = title_data[:int(len(base_data) * val_ratio)]
+
+        train_count_data = count_feature[int(
+            len(base_data) * val_ratio):].reset_index(drop=True).values
+        val_count_data = count_feature[:int(
+            len(base_data) * val_ratio)].reset_index(drop=True).values
+        train_price_data = price_feature[int(
+            len(base_data) * val_ratio):].reset_index(drop=True).values
+        val_price_data = price_feature[:int(
+            len(base_data) * val_ratio)].reset_index(drop=True).values
 
         # debug
         # train_base_data = base_data[3000:5000].reset_index(drop=True)
@@ -68,14 +88,14 @@ def main(epochs, is_train=1):
         gc.collect()
 
         train_dataset = Data(train_base_data, train_title_data,
-                             train_description_data, is_train)
+                             train_description_data, train_count_data, train_price_data, is_train)
         val_dataset = Data(val_base_data, val_title_data,
-                           val_description_data, is_train)
+                           val_description_data, val_count_data, val_price_data, is_train)
 
         train_loader = DataLoader(
-            train_dataset, batch_size=batch_size, num_workers=8)
+            train_dataset, batch_size=batch_size, num_workers=16)
         val_loader = DataLoader(
-            val_dataset, batch_size=batch_size, num_workers=8)
+            val_dataset, batch_size=batch_size, num_workers=16)
         print('data loaded!')
 
         optimizer = Optimizer(
