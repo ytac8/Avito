@@ -9,12 +9,14 @@ from image_preprocess import RandomCrop, Rescale, ToTensor
 
 class Data(Dataset):
 
-    def __init__(self, base_data, title_feature, description_feature,
+    def __init__(self, base_data, title_feature, description_feature, count_feature, price_feature,
                  is_train):
 
         self.base_data = base_data
         self.title_data = title_feature
         self.description_data = description_feature
+        self.count_feature = count_feature
+        self.price_feature = price_feature
         self.is_train = is_train
 
     def __len__(self):
@@ -24,10 +26,13 @@ class Data(Dataset):
         image_name = self.base_data.image[idx]
         image = self.get_image(image_name)
 
+        price_feature = torch.FloatTensor(self.price_feature[idx])
+        count_feature = torch.FloatTensor(self.count_feature[idx])
+
         title = torch.FloatTensor(self.title_data[idx])
-        title = self.text_padding(title, 21).unsqueeze(0)
+        title = self.text_padding(title, 21)
         description = torch.FloatTensor(self.description_data[idx])
-        description = self.text_padding(description, 716).unsqueeze(0)
+        description = self.text_padding(description, 716)
 
         user_id = torch.LongTensor([self.base_data.user_id[idx]])
         user_type = torch.LongTensor([self.base_data.user_type[idx]])
@@ -50,7 +55,9 @@ class Data(Dataset):
             "image_top": image_top,
             "category": category,
             "item_seq_num": item_seq_num,
-            "price": price
+            "price": price,
+            "count_feature": count_feature,
+            "price_feature": price_feature
         }
 
         if self.is_train:
